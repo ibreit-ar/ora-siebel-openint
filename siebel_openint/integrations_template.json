@@ -1,55 +1,17 @@
 {
-  "apigen": {
-    "integrations": {
-      "#Map": "This is a map. Key = integration endpoint path, Value = integration configuration object",
-      "openintegration/v1.0/integration/<Name of Integration>": {
-        "externalDsl": "#Required. External DSL file name from integration-configurations/<Domain>/external-dsl/. Example: DBE-To-Siebel-Contact-Publish.json",
-        "resources": {
-          "externalREST": [
-            {
-              "spokesystem": "#Alias key from apigen.externalREST. Example: describeSystem",
-              "describe": "#Describe endpoint path in external system. Example: /tmf632/describe",
-              "openAPIFilepath": "#OpenAPI spec file name from integration-configurations/<Domain>/restoutbound/. Example: tm632.json"
-            }
-          ],
-          "inboundEventRegistration": {
-            "topic": "#Inbound topic to subscribe for this integration. This also be defined as Event Store in EPS settings in config.json eps.aieventconfig.ConfigParam settings Example: OSM-Orders-Produce",
-            "partitions": [
-              "#Optional partition numbers to subscribe from. Example: 0"
-            ],
-            "integrationUser": "#Required integration user to run callback execution for this inbound event. Example: sadmin"
-          }
-        }
-      }
-    },
-    "externalREST": {
-      "#Map": "This is a map. Key = unique system alias used in DSL RESTOutbound.restSpec, Value = external REST configuration object",
-      "#Unique System Name": {
-        "baseURL": "#Base URL of external REST system. Example: https://example.com",
-        "authentication": {
-          "#Mandatory": "Required. Configure exactly one authentication mode: either 'basic' or 'oidc-client-credentials'",
-          "basic": {
-            "username": "#Basic auth username. Example: admin",
-            "password": "#Basic auth password. Example: admin"
-          },
-          "oidc-client-credentials": {
-            "client-id": "#OIDC client id",
-            "client-secret": "#OIDC client secret",
-            "identity-uri": "#OIDC identity URI. Example: https://idcs.example.com",
-            "oidc-flow": "#Optional OIDC flow. Example: client-credentials or user-assertion",
-            "scope": "#OAuth scope required by the external API"
-          }
-        }
-      }
-    },
-    "outboundEvents": {
-      "#Map": "This is a map. Key = outbound event alias used in DSL EventPublish.queue, Value = outbound event configuration object",
-      "#Unique Name of the Queue": {
-        "topic": "#Outbound topic name used for publishing events to Kafka",
-        "partitions": [
-          "#Optional partition numbers to publish. Example: 0"
-        ]
-      }
+  "integrations": [
+    {
+      "name": "account",
+      "type": "BusinessComponent",
+      "businessObject": "Account",
+      "businessComponent": "Account",
+      "operations": [
+        "query",
+        "insert",
+        "update",
+        "delete"
+      ]
     }
-  }
+  ]
 }
+

@@ -1,96 +1,21 @@
 {
   "app": {
     "siebel": {
-      "useCG": "#Set to true to fetch the connect string from Cloud Gateway using 'cg-url'. If false, 'connect-string' will be used.",
-      "cg-url": "#Cloud Gateway URL (required if useCG=true). Format: https://<host>:<port>/siebel/v1.0/cloudgateway",
-      "connect-string": "#Siebel connection string (used if useCG=false). Format: siebel.TCPIP.None.None://<host>:<port>/<enterprise>",
-      "loginpath": "#Base URL path for Siebel Open UI, used for Applet REST API requests (e.g., /siebel/app/<application>/<language>)."
+      "useCG": true,
+      "cg-url": "https://siebel-cgw.siebel.svc.cluster.local:4430/siebel/v1.0/cloudgateway",
+      "loginpath": "/siebel/app/ecommunications_sso/esn"
     },
-    "context": "#Optional base path prefix for all APIs. Example: oracle → /oracle/openintegration/v1.0/... Set to null if not required.",
-    "port": "#Web server port (e.g., 8433).",
-    "metrics-path": "#File system path where OpenIntegration transaction logs are stored."
-  },
-  "eps": {
-    "SecureAIEgressServer": "# Mandatory. Set to true to enable TLS on AI egress server, false to disable.",
-    "SecureAIToKafkaCommunication": "# Mandatory. Set to true to enable secure communication between AI and Kafka, false otherwise.",
-    "AIEgressPort": "# Mandatory. EPS egress listener port. Example: 4002",
-    "KafkaServers": "# Mandatory. Kafka bootstrap servers in host:port format. Example: localhost:9092",
-    "AIEgressServerKeyStoreName": "# Conditionally mandatory when SecureAIEgressServer=true. Absolute path to AI egress server keystore file.",
-    "AIEgressServerKeyStorePassword": "# Conditionally mandatory when SecureAIEgressServer=true. Password for AI egress server keystore.",
-    "TLSEnabledCipherSuites": "# Optional. Comma-separated TLS cipher suites for the AI egress server. Defaults to TLS_AES_256_GCM_SHA384.",
-    "KafkaKeyStoreName": "# Conditionally mandatory when SecureAIToKafkaCommunication=true. Absolute path to Kafka client keystore file.",
-    "KafkaKeyStorePassword": "# Conditionally mandatory when SecureAIToKafkaCommunication=true. Password for Kafka client keystore.",
-    "KafkaTrustStoreName": "# Conditionally mandatory when SecureAIToKafkaCommunication=true. Absolute path to Kafka truststore file.",
-    "KafkaTrustStorePassword": "# Conditionally mandatory when SecureAIToKafkaCommunication=true. Password for Kafka truststore.",
-    "KafkaPassword": "# Conditionally mandatory when SecureAIToKafkaCommunication=true. Kafka key password.",
-    "KafkaAuthenticationEnabled": "# Optional. Set to true to enable SASL authentication for Kafka, false otherwise.",
-    "KafkaAuthenticationMechanism": "# Conditionally mandatory when KafkaAuthenticationEnabled=true. Supported examples: SCRAM-SHA-256, SCRAM-SHA-512, PLAIN.",
-    "KafkaAuthenticationUser": "# Conditionally mandatory when KafkaAuthenticationEnabled=true. SASL username.",
-    "KafkaAuthenticationPassword": "# Conditionally mandatory when KafkaAuthenticationEnabled=true. SASL password.",
-    "aieventconfig": {
-      "ConfigParam": {
-        "BaseSiebelComponent": {
-          "Alias": "# Conditionally mandatory when BaseSiebelComponent is configured. Default Siebel OM alias for EPS event execution. Example: SCCObjMgr_enu",
-          "SessionPoolSize": "# Conditionally mandatory when BaseSiebelComponent is configured. Default Siebel session pool size. Example: 20",
-          "User": "# Conditionally mandatory when BaseSiebelComponent is configured. Default Siebel user for EPS event execution. Example: SADMIN",
-          "Password": "# Conditionally mandatory when BaseSiebelComponent is configured. Default Siebel password for EPS event execution.",
-          "SessionTime": "# Conditionally mandatory when BaseSiebelComponent is configured. Default Siebel session timeout. Example: 1000",
-          "DefaultKafkaConsumerPollInterval": "# Optional. Default Kafka consumer poll interval in milliseconds. Example: 100"
-        },
-        "SynchronousKafkaProduce": "# Mandatory. Set true for synchronous Kafka publish, false for asynchronous publish.",
-        "KafkaDeliveryTimeout": "# Optional. Kafka producer delivery.timeout.ms value in milliseconds. Default: 30000",
-        "KafkaRequestTimeout": "# Optional. Kafka producer request.timeout.ms value in milliseconds. Default: 10000",
-        "NumberOfProducers": "# Mandatory. Number of producer instances to initialize. Example: 1",
-        "KafkaProducerPollInterval": "# Optional. Async producer queue poll interval in milliseconds. Default: 1",
-        "DefaultTopic": "# Optional. Default Kafka topic used when the inbound payload does not specify a topic.",
-        "KafkaProducerMaxRequestSize": "# Optional. Kafka producer max.request.size in bytes. Default: 20971520",
-        "KafkaPartitionConsumerFetchMaxBytes": "# Optional. Kafka consumer max.partition.fetch.bytes in bytes. Preferred key. Default: 20971520",
-        "KafkaConsumerMaxPartitionFetchBytes": "# Optional. Backward-compatible alias for KafkaPartitionConsumerFetchMaxBytes.",
-        "KafkaTopicConsumerFetchMaxBytes": "# Optional. Kafka consumer fetch.max.bytes in bytes. Preferred key. Default: 20971520",
-        "KafkaConsumerFetchMaxBytes": "# Optional. Backward-compatible alias for KafkaTopicConsumerFetchMaxBytes.",
-        "Events": [
-          {
-            "EventStore": "# Mandatory unless Topic is configured. Kafka topic/event store name to consume from. Example: OSM-Orders-Produce",
-            "Topic": "# Optional. Alternative to EventStore for backward compatibility. Use either EventStore or Topic.",
-            "NumberOfConsumers": "# Mandatory. Number of consumer instances for this topic. Example: 1",
-            "KafkaConsumerPollInterval": "# Optional. Consumer poll interval in milliseconds for this topic. Defaults to BaseSiebelComponent.DefaultKafkaConsumerPollInterval.",
-            "Partitions": "# Optional. Comma-separated Kafka partitions to assign for this topic. Example: 0,1,2",
-            "KafkaConsumerGroupId": "# Optional. Kafka consumer group id for this topic. Example: consumer-group-1",
-            "SiebelComponent": {
-              "Alias": "# Conditionally mandatory when SiebelComponent is configured. Siebel OM alias override for this topic. Example: SCCObjMgr_enu",
-              "SessionPoolSize": "# Conditionally mandatory when SiebelComponent is configured. Siebel session pool size override for this topic. Example: 5",
-              "User": "# Conditionally mandatory when SiebelComponent is configured. Siebel user override for this topic. Example: SADMIN",
-              "Password": "# Conditionally mandatory when SiebelComponent is configured. Siebel password override for this topic.",
-              "SessionTime": "# Conditionally mandatory when SiebelComponent is configured. Siebel session timeout override for this topic. Example: 1000"
-            }
-          }
-        ],
-        "schemamapping": [
-          {
-            "topic-name": {
-              "default": "# Optional. Relative path from config directory to the Avro schema for this topic. Example: schemas/topic-name.avsc",
-              "0": "# Optional. Relative path to the Avro schema for partition 0 when partition-specific schemas are required."
-            }
-          }
-        ]
-      }
-    }
+    "context": "oracle",
+    "port": 8433,
+    "metrics-path": "/tmp"
   },
   "apigen": {
-    "integration-domains": [ "# Domains to be considered for integration flow , example : Telco" ],
     "resources": {
-      "openintegration/v1.0/ui": [
-        "#UI resource names (e.g., 'All Account List View/SIS Account Entry Applet', 'All Account List View/SIS Account Entry Applet/{id}/Contact Detail Applet')."
-      ],
       "openintegration/v1.0/data": [
-        "#Data resources (e.g., 'Account/Account/', 'Account/Account/{id}/contact')."
-      ],
-      "openintegration/v1.0/workflow": [
-        "#Workflow names (e.g., 'EAISiebDemo')."
-      ],
-      "openintegration/v1.0/service": [
-        "#Business service operations Format: <Business Service Name>/<Method Name> (e.g., 'Siebel Account/Insert')."
+        "Account/Account"
       ]
     }
   }
 }
+
+
