@@ -1,0 +1,197 @@
+{
+  "Openint": {
+    "security": {
+      "enabled": "#Set to true to enable OAuth-based security. The server will use server.security.features for authentication and authorization. If false, perimeter authentication is used and security.providers can be removed ",
+      "config": {
+        "require-encryption": "#Set to true to enable application-wide encryption. Set to false to disable encryption."
+      },
+      "providers": [
+        {
+          "abac": {}
+        },
+        {
+          "oidc": {
+            "identity-uri": "#IDCS endpoint URL.",
+            "client-id": "#Client ID registered in IDCS.",
+            "client-secret": "#Client secret associated with the client ID.",
+            "audience": "#Audience value expected in the OAuth token (e.g., openintv2_).",
+            "server-type": "idcs",
+            "header-use": true
+          }
+        }
+      ]
+    },
+    "client": {
+      "private-key": {
+        "keystore": {
+          "resource": {
+            "resource-path": "#Name of the JKS file that contains Client CA certificate imported. Example: siebelclientkeystore.jks"
+          },
+          "type": "JKS",
+          "passphrase": "#Passphrase required to access above JKS Example: siebel",
+          "key": {
+            "alias": "#(mTLS alias) Alias of the certificate/private-key entry used by OpenIntegration during outbound TLS/mTLS handshakes (for target systems such as Siebel Cloud Gateway). This is transport-level identity for HTTPS connection setup and is NOT used as IDP JWT key id. Example: siebelclient"
+          },
+          "idp": {
+            "alias": "#(IDP signing-key alias) Alias of the private-key entry used to sign user-assertion JWT while requesting tokens from IDP. This value is used to load the signing key from the same keystore and is NOT the same as key.alias unless you intentionally use one key pair for both purposes. Example: idp-signing-key",
+            "oi": {
+              "key": {
+                "alias": "#(IDP key-id / kid value) Alias/key-id registered in IDP for the signing certificate and sent as JWT header key id (kid). This tells IDP which registered certificate to use for signature verification. Keep this aligned with IDP app key registration. Example: openint-key-2026"
+              }
+            }
+          }
+        }
+      }
+    },
+    "server": {
+      "shutdown-grace-period": "#Grace period (ISO 8601 format) to allow in-flight requests to complete before shutdown (e.g., PT15S).",
+      "tls": {
+        "trust": {
+          "keystore": {
+            "resource": {
+              "resource-path": "#Name of the JKS file that contains all possible  CA certificate imported, will be used by server/client to verify the certificate provided during TLS. Example: siebeltruststore1.jks"
+            },
+            "type": "JKS",
+            "passphrase": "#Passphrase required to access above JKS. Example: siebel",
+            "trust-store": true
+          }
+        },
+        "private-key": {
+          "keystore": {
+            "resource": {
+              "resource-path": "#Name of the JKS file that contains Server CA certificate imported. Example: siebelserverkeystore.jks"
+            },
+            "type": "JKS",
+            "passphrase": "#Passphrase required to access above JKS Example: siebel",
+            "key": {
+              "alias": "#(Server TLS alias) Alias of the server certificate/private-key entry presented by OpenIntegration Server to inbound clients (for example Browser/Postman). This is inbound server TLS identity and unrelated to Openint.client.tls.private-key.keystore.idp.alias used for IDP JWT signing. Example: siebelserver"
+            }
+          }
+        }
+      },
+      "features": {
+        "security": {
+          "defaults": {
+            "authenticate": true,
+            "authorize": true
+          },
+          "paths": [
+            {
+              "path": "#API path or pattern to secure . If using any wildcard based paths its needs to include `{last:(?!describe$)[^/]+}[/]` as the suffix so describe paths are not OAUTH2 protected . Ex: `/openintegration/v1.0/[{+path}/]{last:(?!describe$)[^/]+}[/]`",
+              "methods": [
+                "#HTTP methods to secure (e.g., GET, POST, PUT, DELETE)."
+              ],
+              "authenticate": "#Non mandatory. If not provided defaults to true. If set to false authentication will be disabled only for this  path.",
+              "authorize": "#Non mandatory. If not provided defaults to true. If set to false authorization will be disabled only for this path.",
+              "abac": {
+                "scopes": [
+                  "#Required OAuth scopes for access (must match token scope values, e.g., read)."
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+
+    "restrictive-cors": {
+      "allow-origins": [
+        "#List of origins allowed. Example:",
+        "https://foo.com",
+        "https://there.com"
+      ],
+      "allow-methods": [
+        "#List of origins allowed",
+        "#Example: GET",
+        "#Example: DELETE"
+      ]
+    },
+    "cors": {
+      "paths": [
+        {
+          "path-pattern": [
+            "#REST Path pattern to be matched for, support wildcards also",
+            "#Example: / in double quotes"
+          ],
+          "allow-origins": [
+            "#List of origins allowed. Example:",
+            "https://foo.com",
+            "https://there.com"
+          ],
+          "allow-methods": [
+            "#List of origins allowed",
+            "#Example: GET",
+            "#Example: DELETE"
+          ]
+        }
+      ]
+    },
+    "cache": {
+      "enabled": "#If set to true , OpenIntegration instance will use provided details to connect to Coherence cache server. If set to false, below configurations can be removed",
+      "cluster-name": "#Coherence cache server name used during server installation. Default value is siebel",
+      "request-timeout": "#Request timeout to connect to Coherence server. Ex: 2s, 500ms. Default value is 2s",
+      "wka": [
+        "#Comma Seperated values of Well Known Address (wka) of Coherence Server Ex: \"127.0.0.1\",\"127.0.0.100\""
+      ],
+      "tlsEnabled": "#If set to true, Coherence client uses Openint.server.tls trust and private-key details to start Coherence client in SSL mode. If set to false below security section will be ignored"
+    },
+    "threshold": {
+      "ui-connection-threshold": "# Max Tasks Threshold percentage before Session Logoffs are kicked off. Ex: 80. Default value is 75 .Allowed values are between 75-99"
+    },
+    "integrations": {
+      "jsonata": {
+        "pool": {
+          "max-size": "#Maximum number of live JSONata Graal contexts that can exist at any time. Optional. Default if not configured: max(8, CPU cores * 2).",
+          "core-size": "#Number of JSONata contexts created during startup and retained as baseline pool capacity. Optional. Default if not configured: 100, capped by max-size.",
+          "acquire-timeout-millis": "#How long a request waits to borrow a JSONata context before failing fast. Optional. Default if not configured: 250 milliseconds (minimum enforced by runtime: 50).",
+          "idle-ttl-millis": "#Idle lifetime for non-core JSONata contexts before they become eviction candidates. Optional. Default if not configured: 300000 milliseconds (5 minutes).",
+          "cleanup-interval-millis": "#Minimum interval between idle-context eviction scans. Optional. Default if not configured: 30000 milliseconds (30 seconds)."
+        }
+      }
+    },
+    "tracing": {
+      "enabled": "#If set to true , Tracing is enabled. If set to false, tracing is disabled and below configurations can be removed",
+      "host": "#Host Name of Trace Collector. Ex: codacollector.coda.svc.cluster.local",
+      "service": "#Service name to identify this server's traces in Tracing UI. Ex: open-integration",
+      "otlp-protocol" : "configuration specifies the transport protocol used by the OpenTelemetry Protocol (OTLP) exporter for sending telemetry data (e.g., traces, metrics, logs) to a backend.Valid Values grpc: Uses OTLP over gRPC , http/protobuf: Uses OTLP over HTTP with Protobuf encoding, http/json: Uses OTLP over HTTP with JSON encoding (if supported by the backend). Default value is grpc",
+      "protocol": "#HTTP Protocol to be used when connecting with Tracing server. Ex: http,https",
+      "port": "#Port to be used when connecting to Tracing server. Ex: 14250",
+      "tags": {
+        "env": "#String name to be used by Server to group Spans. Ex: development/Production"
+      },
+      "sampler-type": "#Ex: Sampler type to be used by server to collect traces for the request. Supported values: const, ratio",
+      "sampler-param": "#Defines the tracing sampler parameter used by the server to collect traces. Example values: 0.1, 0.01. If the sampler type is 'const', setting sampler-param to 1 enables tracing for all requests, while any other value disables sampling. For a 'ratio' sampler type, sampler-param should be between 0 and 1, where 0.1 samples 1 in 10 requests, and 0.001 samples 1 in 1000 requests.",
+      "propagation": "#Kind of Traces to be propagated by the server in a comma separated values, Ex: w3c,b3,jaeger"
+    }
+  },
+  "Profile": {
+    "ProfileName": "#Unique name of the profile used by Siebel OpenIntegration. Example: <HostFQDN>"
+  },
+  "ConfigParam": {
+    "Applications": [
+      {
+        "Name": "#Name of the Siebel application configured to work with Siebel OpenIntegration. Example: callcenter",
+        "Language": "#Language of the Siebel application to be configured. Example: enu",
+        "ObjectManager": "#Siebel ObjectManager(OM) that the application is configured with. Example: sccobjmgr_enu",
+        "MaxTasks": "#Refers to the maximum number of Active Siebel Tasks that Siebel Open Integration can use. Ideally this value should never exceed the value of component parameter MAX_TASKS of the Siebel object manager being used. Example: 100",
+        "AuthenticationProperties": {
+          "UserSpec": "#The pre-configured user parameter. Example SBL_REMOTE_USER",
+          "TrustToken": "#Siebel trust token value used for establishing application connection. Example: ldap",
+          "SingleSignOn": "#Boolean value true/false to enable/disable the SSO login.",
+          "AnonUserName": "#Siebel anonymous user name if the actual user name is not provided. Example: GUESTCST",
+          "SessionTimeout": "#Siebel connection session timeout value in milliseconds. Example: 900",
+          "GuestSessionTimeout": "#Siebel guest user connection session timeout value in milliseconds. Example: 300"
+        }
+      }
+    ],
+    "RESTInBound": {
+      "MaxConnections": "#Maximum allowed connections with Siebel, value is in integer number. Default number if this is not configured is 4. Example: 20",
+      "RESTAuthenticationProperties": {
+        "TrustToken": "#Siebel trust token value used for establishing application connection. Example: ldap",
+        "AnonUserName": "#Siebel anonymous user name if the actual user name is not provided. Example: GUESTCST",
+        "UserSpec": "#The pre-configured user parameter. Example SBL_REMOTE_USER"
+      },
+      "ObjectManager": "#Siebel ObjectManager(OM) that the application is configured with. Example: eaiobjmgr_enu"
+    }
+  }
+}
