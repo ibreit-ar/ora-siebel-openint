@@ -45,7 +45,7 @@
     "cache": {
       "enabled": "true",
       "wka": [
-        "coherence-nodeport-siebelcache.oitmf.svc.cluster.local"
+        "coherence-nodeport-siebelcache.oidev.svc.cluster.local"
       ],
       "tlsEnabled": "true",
       "cluster-name": "siebelcache"
