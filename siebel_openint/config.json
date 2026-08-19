@@ -10,14 +10,13 @@
     "metrics-path": "/tmp"
   },
   "eps": {
+    "SecureAIEgressServer": "false",
+    "AIEgressPort": "9091",    
     "SecureAIToKafkaCommunication": "false",
     "KafkaServers": "kafka-oi.kafka-oi.svc.cluster.local:9092",
-    "SecureAIEgressServer": "false",
-    "AIEgressPort": "9091",
     "aieventconfig": {
       "ConfigParam": {
         "NumberOfProducers": "1",
-        "DLQMessagesMaxLimit": "500",
         "SynchronousKafkaProduce": true,
         "KafkaProducerMaxRequestSize": "20971520",
         "KafkaTopicConsumerFetchMaxBytes": "20971530",
