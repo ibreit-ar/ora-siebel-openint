@@ -1,0 +1,13 @@
+/* `get_party_account_SWIContactIO` and `get_party_account_SWIAddressIO` are looped steps;
+   therefore, `WorkflowInput` is used to reference the current iteration context. */
+(
+  {
+    "get_party_account": $exists($."WorkflowInput") ? $.WorkflowInput :
+        $exists($."get_party_account_SWICustomerPartyIO") ? $.get_party_account_SWICustomerPartyIO :
+        $exists($."get_party_account_SWIBillingProfileIO") ? $.get_party_account_SWIBillingProfileIO :
+        $exists($."get_party_account_SWIAccountContactIO") ? $.get_party_account_SWIAccountContactIO :
+        $exists($."get_party_account_SWIAccountAddressIO") ? $.get_party_account_SWIAccountAddressIO :
+        $exists($."get_party_account_SWIAccountHierarchyIO") ? $.get_party_account_SWIAccountHierarchyIO,
+    "global": $exists($."global") ? $.global
+  }
+)

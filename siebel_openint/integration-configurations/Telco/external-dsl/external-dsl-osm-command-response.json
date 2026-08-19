@@ -1,0 +1,135 @@
+{
+  "input": {
+    "type": "object"
+  },
+  "global": [
+    "rest_status",
+    "tt_id"
+  ],
+  "output": {
+    "type": "object"
+  },
+  "steps": {
+    "Siebel_Failed_State": {
+      "type": "RESTOutbound",
+      "restSpec": "siebel-tmf-dbe",
+      "endPoint": "Workflow Process Manager/RunProcess",
+      "method": "POST",
+      "inputHeaders": {
+        "Content-Type": "application/json"
+      },
+      "queryParams": {
+        "matchrequestformat": "y"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "POSiebelFailedState.json"
+          }
+        ]
+      },
+      "output": {
+        "global.rest_status": "${status}"
+      }
+    },
+    "Trouble_Ticket": {
+      "type": "RESTOutbound",
+      "restSpec": "siebel-tmf-dbe",
+      "endPoint": "SWI Trouble Ticket Service/Insert",
+      "method": "POST",
+      "inputHeaders": {
+        "Content-Type": "application/json"
+      },
+      "queryParams": {
+        "matchrequestformat": "y"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "submit-order-trouble-ticket-data-collection.json"
+          }
+        ]
+      },
+      "output": {
+        "global.tt_id": "${output.SiebelMessage.ListOfSWITroubleTicketIO.'Trouble Ticket'[0].Id}"
+      }
+    }
+  },
+  "response": {
+    "success": {
+      "payload": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "MatchRequest_OSM_CMD_RESPONSE.json"
+          }
+        ]
+      },
+      "statusCode": 200
+    },
+    "error": {
+      "payload": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "MatchRequest_OSM_CMD_RESPONSE.json"
+          }
+        ]
+      },
+      "statusCode": 500
+    }
+  },
+  "transitions": {
+    "$start": {
+      "transitions": [
+        {
+          "condition": "${WorkflowInput.rejectedPayload != null && (WorkflowInput.code != null || WorkflowInput.status == 'Bad Request' || WorkflowInput.status == 'Internal Server Error' || WorkflowInput.state == 'failed' || WorkflowInput.state == 'rejected' || WorkflowInput.state == 'terminatedWithError')}",
+          "target": "Siebel_Failed_State"
+        },
+        {
+          "target": "$end"
+        }
+      ]
+    },
+    "Siebel_Failed_State": {
+      "transitions": [
+        {
+          "condition": "${global.rest_status != '200'}",
+          "target": "$errorEnd"
+        },
+        {
+          "target": "Trouble_Ticket"
+        }
+      ]
+    },
+    "Trouble_Ticket": {
+      "transitions": [
+        {
+          "condition": "${global.tt_id != null && global.tt_id != ''}",
+          "target": "$end"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,925 @@
+{
+  "input": {
+    "type": "object"
+  },
+  "global": [
+    "partyAccountId",
+    "event_status",
+    "isParentAccountEvent",
+    "parentAccountId",
+    "parentAccountName",
+    "parentAccountPrimaryBillPrfId",
+    "loopedPartyAccountId",
+    "correlationId"
+  ],
+  "output": {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "additionalProperties": true,
+    "properties": {
+      "publish_status": {
+        "type": "string"
+      },
+      "exception": {
+        "type": "object"
+      }
+    }
+  },
+  "steps": {
+    "get_party_account_SWICustomerPartyIO": {
+      "type": "RESTOutbound",
+      "restSpec": "siebel-tmf-dbe",
+      "endPoint": "SWI Party Account Service/QueryPage",
+      "method": "POST",
+      "inputHeaders": {
+        "Content-Type": "application/json"
+      },
+      "queryParams": {
+        "matchrequestformat": "y"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/retrieveSiebelAccountPayloadTemplate.json"
+          }
+        ]
+      },
+      "retryConfig": {
+        "retryDelayMilliseconds": 50,
+        "retryBackoffMultiplier": 2.0,
+        "retryTotalTimeoutMilliseconds": 900,
+        "retryExcludeStatusCodes": [
+          404,
+          200
+        ]
+      },
+      "output": {
+        "global.partyAccountId": "${output.SiebelMessageOut.ListOfSWICustomerPartyIO.Account[0].'Account Number' ?: ''}"
+      }
+    },
+    "brm_event_publish_SWICustomerPartyIO": {
+      "type": "EventPublish",
+      "queue": "brm-event-publish",
+      "inputHeaders": {
+        "correlation-id": "${input.correlationId}",
+        "account-id": "${global.partyAccountId}"
+      },
+      "retryConfig": {
+        "retryMaxAttempts": 3,
+        "retryDelayMilliseconds": 5000,
+        "retryBackoffMultiplier": 1.0,
+        "retryMaxDelayMilliseconds": 20000,
+        "retryTotalTimeoutMilliseconds": 200000
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "get_party_account_SWICustomerPartyIO"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/sblTMF666PartyAccountEventTransformation-generic.jsonata"
+          },
+          {
+            "transformationSpec": "partyAccount/sblTMF666PartyAccountEventTransformation.jsonata"
+          }
+        ]
+      },
+      "output": {
+        "global.event_status": "${publish_status}"
+      }
+    },
+    "get_party_account_SWIContactIO": {
+      "type": "RESTOutbound",
+      "restSpec": "siebel-tmf-dbe",
+      "endPoint": "SWI Party Account Service/QueryPage",
+      "method": "POST",
+      "inputHeaders": {
+        "Content-Type": "application/json"
+      },
+      "queryParams": {
+        "matchrequestformat": "y"
+      },
+      "loop": {
+        "source": "${WorkflowInput.SiebelMessage.ListOfSWIContactIO.Contact.ListOfAccount['Account']}",
+        "collectOutputs": true,
+        "executionMode": "parallel",
+        "maxDurationMs": 300000
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/retrieveSiebelAccountPayloadTemplateWithContact.json"
+          }
+        ]
+      },
+      "retryConfig": {
+        "retryDelayMilliseconds": 50,
+        "retryBackoffMultiplier": 2.0,
+        "retryTotalTimeoutMilliseconds": 900,
+        "retryExcludeStatusCodes": [
+          404,
+          200
+        ]
+      },
+      "output": {
+        "global.partyAccountId": "${output.SiebelMessageOut.ListOfSWICustomerPartyIO.Account[0].'Account Number' ?: ''}"
+      }
+    },
+    "brm_event_publish_SWIContactIO": {
+      "type": "EventPublish",
+      "queue": "brm-event-publish",
+      "storeInputToGlobal": {
+        "global.loopedPartyAccountId": "${input.event.partyAccount.id}"
+      },
+      "inputHeaders": {
+        "correlation-id": "${input.correlationId}",
+        "account-id": "${global.loopedPartyAccountId}"
+      },
+      "retryConfig": {
+        "retryMaxAttempts": 3,
+        "retryDelayMilliseconds": 5000,
+        "retryBackoffMultiplier": 1.0,
+        "retryMaxDelayMilliseconds": 20000,
+        "retryTotalTimeoutMilliseconds": 200000
+      },
+      "loop": {
+        "source": "${get_party_account_SWIContactIO['outputs'] ?: []}",
+        "collectOutputs": true,
+        "executionMode": "parallel",
+        "maxDurationMs": 300000
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/loopOutputToWorkflowInput.jsonata"
+          },
+          {
+            "transformationSpec": "partyAccount/sblTMF666PartyAccountEventTransformation-generic.jsonata"
+          },
+          {
+            "transformationSpec": "partyAccount/sblTMF666PartyAccountEventTransformation.jsonata"
+          }
+        ]
+      },
+      "output": {
+        "global.event_status": "${publish_status}"
+      }
+    },
+    "get_party_account_SWIBillingProfileIO": {
+      "type": "RESTOutbound",
+      "restSpec": "siebel-tmf-dbe",
+      "endPoint": "SWI Party Account Service/QueryPage",
+      "method": "POST",
+      "inputHeaders": {
+        "Content-Type": "application/json"
+      },
+      "queryParams": {
+        "matchrequestformat": "y"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/retrieveSiebelAccountPayloadTemplateWithBillingProf.json"
+          }
+        ]
+      },
+      "retryConfig": {
+        "retryDelayMilliseconds": 50,
+        "retryBackoffMultiplier": 2.0,
+        "retryTotalTimeoutMilliseconds": 900,
+        "retryExcludeStatusCodes": [
+          404,
+          200
+        ]
+      },
+      "output": {
+        "global.partyAccountId": "${output.SiebelMessageOut.ListOfSWICustomerPartyIO.Account[0].'Account Number' ?: ''}"
+      }
+    },
+    "brm_event_publish_SWIBillingProfileIO": {
+      "type": "EventPublish",
+      "queue": "brm-event-publish",
+      "inputHeaders": {
+        "correlation-id": "${input.correlationId}",
+        "account-id": "${global.partyAccountId}"
+      },
+      "retryConfig": {
+        "retryMaxAttempts": 3,
+        "retryDelayMilliseconds": 5000,
+        "retryBackoffMultiplier": 1.0,
+        "retryMaxDelayMilliseconds": 20000,
+        "retryTotalTimeoutMilliseconds": 200000
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "get_party_account_SWIBillingProfileIO"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/sblTMF666PartyAccountEventTransformation-generic.jsonata"
+          },
+          {
+            "transformationSpec": "partyAccount/sblTMF666PartyAccountEventTransformation.jsonata"
+          }
+        ]
+      },
+      "output": {
+        "global.event_status": "${publish_status}"
+      }
+    },
+    "get_party_account_SWIAddressIO": {
+      "type": "RESTOutbound",
+      "restSpec": "siebel-tmf-dbe",
+      "endPoint": "SWI Party Account Service/QueryPage",
+      "method": "POST",
+      "inputHeaders": {
+        "Content-Type": "application/json"
+      },
+      "queryParams": {
+        "matchrequestformat": "y"
+      },
+      "loop": {
+        "source": "${WorkflowInput.SiebelMessage.ListOfSWIAddressIO.'CUT Address'.ListOfAccount['Account']}",
+        "collectOutputs": true,
+        "executionMode": "parallel",
+        "maxDurationMs": 300000
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/retrieveSiebelAccountPayloadTemplateWithAddress.json"
+          }
+        ]
+      },
+      "retryConfig": {
+        "retryDelayMilliseconds": 50,
+        "retryBackoffMultiplier": 2.0,
+        "retryTotalTimeoutMilliseconds": 900,
+        "retryExcludeStatusCodes": [
+          404,
+          200
+        ]
+      },
+      "output": {
+        "global.partyAccountId": "${output.SiebelMessageOut.ListOfSWICustomerPartyIO.Account[0].'Account Number' ?: ''}"
+      }
+    },
+    "brm_event_publish_SWIAddressIO": {
+      "type": "EventPublish",
+      "queue": "brm-event-publish",
+      "storeInputToGlobal": {
+        "global.loopedPartyAccountId": "${input.event.partyAccount.id}"
+      },
+      "inputHeaders": {
+        "correlation-id": "${input.correlationId}",
+        "account-id": "${global.loopedPartyAccountId}"
+      },
+      "retryConfig": {
+        "retryMaxAttempts": 3,
+        "retryDelayMilliseconds": 5000,
+        "retryBackoffMultiplier": 1.0,
+        "retryMaxDelayMilliseconds": 20000,
+        "retryTotalTimeoutMilliseconds": 200000
+      },
+      "loop": {
+        "source": "${get_party_account_SWIAddressIO['outputs'] ?: []}",
+        "collectOutputs": true,
+        "executionMode": "parallel",
+        "maxDurationMs": 300000
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/loopOutputToWorkflowInput.jsonata"
+          },
+          {
+            "transformationSpec": "partyAccount/sblTMF666PartyAccountEventTransformation-generic.jsonata"
+          },
+          {
+            "transformationSpec": "partyAccount/sblTMF666PartyAccountEventTransformation.jsonata"
+          }
+        ]
+      },
+      "output": {
+        "global.event_status": "${publish_status}"
+      }
+    },
+    "get_party_account_SWIAccountContactIO": {
+      "type": "RESTOutbound",
+      "restSpec": "siebel-tmf-dbe",
+      "endPoint": "SWI Party Account Service/QueryPage",
+      "method": "POST",
+      "inputHeaders": {
+        "Content-Type": "application/json"
+      },
+      "queryParams": {
+        "matchrequestformat": "y"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/retrieveSiebelAccountPayloadTemplateContactAssoc.json"
+          }
+        ]
+      },
+      "retryConfig": {
+        "retryDelayMilliseconds": 50,
+        "retryBackoffMultiplier": 2.0,
+        "retryTotalTimeoutMilliseconds": 900,
+        "retryExcludeStatusCodes": [
+          404,
+          200
+        ]
+      },
+      "output": {
+        "global.partyAccountId": "${output.SiebelMessageOut.ListOfSWICustomerPartyIO.Account[0].'Account Number' ?: ''}"
+      }
+    },
+    "brm_event_publish_SWIAccountContactIO": {
+      "type": "EventPublish",
+      "queue": "brm-event-publish",
+      "inputHeaders": {
+        "correlation-id": "${input.correlationId}",
+        "account-id": "${global.partyAccountId}"
+      },
+      "retryConfig": {
+        "retryMaxAttempts": 3,
+        "retryDelayMilliseconds": 5000,
+        "retryBackoffMultiplier": 1.0,
+        "retryMaxDelayMilliseconds": 20000,
+        "retryTotalTimeoutMilliseconds": 200000
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "get_party_account_SWIAccountContactIO"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/sblTMF666PartyAccountEventTransformation-generic.jsonata"
+          },
+          {
+            "transformationSpec": "partyAccount/sblTMF666PartyAccountEventTransformation.jsonata"
+          }
+        ]
+      },
+      "output": {
+        "global.event_status": "${publish_status}"
+      }
+    },
+    "get_party_account_SWIAccountAddressIO": {
+      "type": "RESTOutbound",
+      "restSpec": "siebel-tmf-dbe",
+      "endPoint": "SWI Party Account Service/QueryPage",
+      "method": "POST",
+      "inputHeaders": {
+        "Content-Type": "application/json"
+      },
+      "queryParams": {
+        "matchrequestformat": "y"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/retrieveSiebelAccountPayloadTemplateAddressAssoc.json"
+          }
+        ]
+      },
+      "retryConfig": {
+        "retryDelayMilliseconds": 50,
+        "retryBackoffMultiplier": 2.0,
+        "retryTotalTimeoutMilliseconds": 900,
+        "retryExcludeStatusCodes": [
+          404,
+          200
+        ]
+      },
+      "output": {
+        "global.partyAccountId": "${output.SiebelMessageOut.ListOfSWICustomerPartyIO.Account[0].'Account Number' ?: ''}"
+      }
+    },
+    "brm_event_publish_SWIAccountAddressIO": {
+      "type": "EventPublish",
+      "queue": "brm-event-publish",
+      "inputHeaders": {
+        "correlation-id": "${input.correlationId}",
+        "account-id": "${global.partyAccountId}"
+      },
+      "retryConfig": {
+        "retryMaxAttempts": 3,
+        "retryDelayMilliseconds": 5000,
+        "retryBackoffMultiplier": 1.0,
+        "retryMaxDelayMilliseconds": 20000,
+        "retryTotalTimeoutMilliseconds": 200000
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "get_party_account_SWIAccountAddressIO"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/sblTMF666PartyAccountEventTransformation-generic.jsonata"
+          },
+          {
+            "transformationSpec": "partyAccount/sblTMF666PartyAccountEventTransformation.jsonata"
+          }
+        ]
+      },
+      "output": {
+        "global.event_status": "${publish_status}"
+      }
+    },
+    "get_party_account_SWIAccountHierarchyIO": {
+      "type": "RESTOutbound",
+      "restSpec": "siebel-tmf-dbe",
+      "endPoint": "SWI Party Account Service/QueryPage",
+      "method": "POST",
+      "inputHeaders": {
+        "Content-Type": "application/json"
+      },
+      "queryParams": {
+        "matchrequestformat": "y"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/retrieveSiebelAccountPayloadTemplateParentAccount.json"
+          }
+        ]
+      },
+      "retryConfig": {
+        "retryDelayMilliseconds": 50,
+        "retryBackoffMultiplier": 2.0,
+        "retryTotalTimeoutMilliseconds": 900,
+        "retryExcludeStatusCodes": [
+          404,
+          200
+        ]
+      },
+      "output": {
+        "global.partyAccountId": "${output.SiebelMessageOut.ListOfSWICustomerPartyIO.Account[0].'Account Number' ?: ''}",
+        "global.parentAccountId": "${output.SiebelMessageOut.ListOfSWICustomerPartyIO.Account[0].'Parent Account Id' ?: ''}",
+        "global.isParentAccountEvent": "${true==true}"
+      }
+    },
+    "get_parent_party_account_SWIAccountHierarchyIO": {
+      "type": "RESTOutbound",
+      "restSpec": "siebel-tmf-dbe",
+      "endPoint": "SWI Customer Party Service/QueryById",
+      "method": "POST",
+      "inputHeaders": {
+        "Content-Type": "application/json"
+      },
+      "queryParams": {
+        "matchrequestformat": "y"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/getParentAccountForHierarchy.jsonata"
+          }
+        ]
+      },
+      "retryConfig": {
+        "retryDelayMilliseconds": 50,
+        "retryBackoffMultiplier": 2.0,
+        "retryTotalTimeoutMilliseconds": 900,
+        "retryExcludeStatusCodes": [
+          404,
+          200
+        ]
+      },
+      "output": {
+        "global.parentAccountName": "${output.SiebelMessage.ListOfSWICustomerPartyIO.Account[0].'Name' ?: ''}",
+        "global.parentAccountPrimaryBillPrfId": "${output.SiebelMessage.ListOfSWICustomerPartyIO.Account[0].'Primary Billing Profile Id' ?: ''}"
+      }
+    },
+    "brm_event_publish_SWIAccountHierarchyIO": {
+      "type": "EventPublish",
+      "queue": "brm-event-publish",
+      "inputHeaders": {
+        "correlation-id": "${input.correlationId}",
+        "account-id": "${global.partyAccountId}"
+      },
+      "retryConfig": {
+        "retryMaxAttempts": 3,
+        "retryDelayMilliseconds": 5000,
+        "retryBackoffMultiplier": 1.0,
+        "retryMaxDelayMilliseconds": 20000,
+        "retryTotalTimeoutMilliseconds": 200000
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "get_party_account_SWIAccountHierarchyIO"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/sblTMF666PartyAccountEventTransformation-generic.jsonata"
+          },
+          {
+            "transformationSpec": "partyAccount/sblTMF666PartyAccountEventTransformation.jsonata"
+          }
+        ]
+      },
+      "output": {
+        "global.event_status": "${publish_status}"
+      }
+    }
+  },
+  "response": {
+    "success": {
+      "payload": {
+        "dataCollection": [
+          {
+            "source": "brm_event_publish_SWICustomerPartyIO"
+          },
+          {
+            "source": "brm_event_publish_SWIContactIO"
+          },
+          {
+            "source": "brm_event_publish_SWIBillingProfileIO"
+          },
+          {
+            "source": "brm_event_publish_SWIAddressIO"
+          },
+          {
+            "source": "brm_event_publish_SWIAccountContactIO"
+          },
+          {
+            "source": "brm_event_publish_SWIAccountAddressIO"
+          },
+          {
+            "source": "brm_event_publish_SWIAccountHierarchyIO"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/MatchRequest_brm_event_publish.jsonata"
+          }
+        ]
+      },
+      "statusCode": "200",
+      "headers": {
+        "X-Flow-Result": "success"
+      }
+    },
+    "error": {
+      "payload": {
+        "dataCollection": [
+          {
+            "source": "brm_event_publish_SWICustomerPartyIO"
+          },
+          {
+            "source": "brm_event_publish_SWIContactIO"
+          },
+          {
+            "source": "brm_event_publish_SWIBillingProfileIO"
+          },
+          {
+            "source": "brm_event_publish_SWIAddressIO"
+          },
+          {
+            "source": "brm_event_publish_SWIAccountContactIO"
+          },
+          {
+            "source": "brm_event_publish_SWIAccountAddressIO"
+          },
+          {
+            "source": "brm_event_publish_SWIAccountHierarchyIO"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/MatchRequest_brm_event_publish.jsonata"
+          }
+        ]
+      },
+      "statusCode": "500",
+      "headers": {
+        "X-Flow-Result": "error"
+      }
+    }
+  },
+  "transitions": {
+    "$start": {
+      "transitions": [
+        {
+          "condition": "${var intObjectName = WorkflowInput.SiebelMessage.'IntObjectName' ?: ''; intObjectName == 'SWICustomerPartyIO'}",
+          "target": "get_party_account_SWICustomerPartyIO"
+        },
+        {
+          "condition": "${var intObjectName = WorkflowInput.SiebelMessage.'IntObjectName' ?: ''; intObjectName == 'SWIContactIO'}",
+          "target": "get_party_account_SWIContactIO"
+        },
+        {
+          "condition": "${var intObjectName = WorkflowInput.SiebelMessage.'IntObjectName' ?: ''; intObjectName == 'SWIBillingProfileIO'}",
+          "target": "get_party_account_SWIBillingProfileIO"
+        },
+        {
+          "condition": "${var intObjectName = WorkflowInput.SiebelMessage.'IntObjectName' ?: ''; intObjectName == 'SWIAddressIO'}",
+          "target": "get_party_account_SWIAddressIO"
+        },
+        {
+          "condition": "${var intObjectName = WorkflowInput.SiebelMessage.'IntObjectName' ?: ''; intObjectName == 'SWIAccountContactIO'}",
+          "target": "get_party_account_SWIAccountContactIO"
+        },
+        {
+          "condition": "${var intObjectName = WorkflowInput.SiebelMessage.'IntObjectName' ?: ''; intObjectName == 'SWIAccountAddressIO'}",
+          "target": "get_party_account_SWIAccountAddressIO"
+        },
+        {
+          "condition": "${var intObjectName = WorkflowInput.SiebelMessage.'IntObjectName' ?: ''; intObjectName == 'SWIAccountHierarchyIO'}",
+          "target": "get_party_account_SWIAccountHierarchyIO"
+        }
+      ]
+    },
+    "get_party_account_SWICustomerPartyIO": {
+      "transitions": [
+        {
+          "condition": "${global.partyAccountId != ''}",
+          "target": "brm_event_publish_SWICustomerPartyIO"
+        },
+        {
+          "condition": "${global.partyAccountId == ''}",
+          "target": "$errorEnd"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    },
+    "brm_event_publish_SWICustomerPartyIO": {
+      "transitions": [
+        {
+          "condition": "${global.event_status == true}",
+          "target": "$end"
+        },
+        {
+          "condition": "${global.event_status == false}",
+          "target": "$errorEnd"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    },
+    "get_party_account_SWIContactIO": {
+      "transitions": [
+        {
+          "condition": "${get_party_account_SWIContactIO.failureCount < 1}",
+          "target": "brm_event_publish_SWIContactIO"
+        },
+        {
+          "condition": "${get_party_account_SWIContactIO.failureCount > 0}",
+          "target": "$errorEnd"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    },
+    "brm_event_publish_SWIContactIO": {
+      "transitions": [
+        {
+          "condition": "${brm_event_publish_SWIContactIO.failureCount < 1}",
+          "target": "$end"
+        },
+        {
+          "condition": "${brm_event_publish_SWIContactIO.failureCount > 0}",
+          "target": "$errorEnd"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    },
+    "get_party_account_SWIBillingProfileIO": {
+      "transitions": [
+        {
+          "condition": "${global.partyAccountId != ''}",
+          "target": "brm_event_publish_SWIBillingProfileIO"
+        },
+        {
+          "condition": "${global.partyAccountId == ''}",
+          "target": "$errorEnd"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    },
+    "brm_event_publish_SWIBillingProfileIO": {
+      "transitions": [
+        {
+          "condition": "${global.event_status == true}",
+          "target": "$end"
+        },
+        {
+          "condition": "${global.event_status == false}",
+          "target": "$errorEnd"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    },
+    "get_party_account_SWIAddressIO": {
+      "transitions": [
+        {
+          "condition": "${get_party_account_SWIAddressIO.failureCount < 1}",
+          "target": "brm_event_publish_SWIAddressIO"
+        },
+        {
+          "condition": "${get_party_account_SWIAddressIO.failureCount > 0}",
+          "target": "$errorEnd"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    },
+    "brm_event_publish_SWIAddressIO": {
+      "transitions": [
+        {
+          "condition": "${brm_event_publish_SWIAddressIO.failureCount < 1}",
+          "target": "$end"
+        },
+        {
+          "condition": "${brm_event_publish_SWIAddressIO.failureCount > 0}",
+          "target": "$errorEnd"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    },
+    "get_party_account_SWIAccountContactIO": {
+      "transitions": [
+        {
+          "condition": "${global.partyAccountId != ''}",
+          "target": "brm_event_publish_SWIAccountContactIO"
+        },
+        {
+          "condition": "${global.partyAccountId == ''}",
+          "target": "$errorEnd"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    },
+    "brm_event_publish_SWIAccountContactIO": {
+      "transitions": [
+        {
+          "condition": "${global.event_status == true}",
+          "target": "$end"
+        },
+        {
+          "condition": "${global.event_status == false}",
+          "target": "$errorEnd"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    },
+    "get_party_account_SWIAccountAddressIO": {
+      "transitions": [
+        {
+          "condition": "${global.partyAccountId != ''}",
+          "target": "brm_event_publish_SWIAccountAddressIO"
+        },
+        {
+          "condition": "${global.partyAccountId == ''}",
+          "target": "$errorEnd"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    },
+    "brm_event_publish_SWIAccountAddressIO": {
+      "transitions": [
+        {
+          "condition": "${global.event_status == true}",
+          "target": "$end"
+        },
+        {
+          "condition": "${global.event_status == false}",
+          "target": "$errorEnd"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    },
+    "get_party_account_SWIAccountHierarchyIO": {
+      "transitions": [
+        {
+          "condition": "${global.partyAccountId != '' && global.parentAccountId != ''}",
+          "target": "get_parent_party_account_SWIAccountHierarchyIO"
+        },
+        {
+          "condition": "${global.partyAccountId != '' && global.parentAccountId == ''}",
+          "target": "brm_event_publish_SWIAccountHierarchyIO"
+        },
+        {
+          "condition": "${global.partyAccountId == ''}",
+          "target": "$errorEnd"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    },
+    "brm_event_publish_SWIAccountHierarchyIO": {
+      "transitions": [
+        {
+          "condition": "${global.event_status == true}",
+          "target": "$end"
+        },
+        {
+          "condition": "${global.event_status == false}",
+          "target": "$errorEnd"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    },
+    "get_parent_party_account_SWIAccountHierarchyIO": {
+      "transitions": [
+        {
+          "condition": "${global.parentAccountName != ''}",
+          "target": "brm_event_publish_SWIAccountHierarchyIO"
+        },
+        {
+          "condition": "${global.parentAccountName == ''}",
+          "target": "$errorEnd"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    }
+  }
+}

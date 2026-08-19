@@ -1,0 +1,655 @@
+(
+$items := SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].ListOfSWIOrderItem.SWIOrderItem;
+
+$safeNumber := function($val) {
+$trim($string($val)) != "" ? $number($replace($string($val), /^\./, "0.")) : 0
+};
+
+$tmfAction := function($actionCode) {
+  (
+    $action := $lowercase($trim($string($actionCode)));
+    $action = "" or $action = "-" or $action = "existing" ? "noChange" :
+    $action = "new" or $action = "add" ? "add" :
+    $action = "modify" or $action = "modified" ? "modify" :
+    $action = "delete" or $action = "deleted" ? "terminate" :
+    $action = "suspend" or $action = "suspended" ? "suspend" :
+    $action = "resume" or $action = "resumed" ? "resume" :
+    $action = "terminate" or $action = "terminated" ? "terminate" :
+    "noChange"
+  )
+};
+
+$buildExternalReference := function($integrationId, $rootOrderItemId, $assetIntegrationId, $rootAssetIntegrationId, $lineItemId, $purchaseChild) {
+$append([
+{
+'@type': 'ExternalReferenceOracle',
+'id': $integrationId ? $integrationId : '',
+'externalIdentifierType': 'externalIntegrationId',
+'owner': 'SIEBEL'
+},
+{
+'@type': 'ExternalReferenceOracle',
+'id': $rootOrderItemId ? $rootOrderItemId : '',
+'externalIdentifierType': 'externalRootOrderItemId',
+'owner': 'SIEBEL'
+},
+{
+'@type': 'ExternalReferenceOracle',
+'id': $assetIntegrationId ? $assetIntegrationId : '',
+'externalIdentifierType': 'externalAssetIntegrationId',
+'owner': 'SIEBEL'
+},
+{
+'@type': 'ExternalReferenceOracle',
+'id': $rootAssetIntegrationId ? $rootAssetIntegrationId : '',
+'externalIdentifierType': 'externalRootAssetIntegrationId',
+'owner': 'SIEBEL'
+},
+{
+'@type': 'ExternalReferenceOracle',
+'id': $lineItemId ? $lineItemId : '',
+'externalIdentifierType': 'externalOrderItemID',
+'owner': 'SIEBEL'
+}
+],
+$exists($purchaseChild) ?
+[
+{
+'@type': 'ExternalReferenceOracle',
+'id': $purchaseChild.Id ? $purchaseChild.Id : '',
+'externalIdentifierType': 'externalPurchaseItemId',
+'owner': 'SIEBEL'
+},
+{
+'@type': 'ExternalReferenceOracle',
+'id': $purchaseChild.'Integration Id' ? $purchaseChild.'Integration Id' : '',
+'externalIdentifierType': 'externalPurchaseIntegrationId',
+'owner': 'SIEBEL'
+},
+{
+'@type': 'ExternalReferenceOracle',
+'id': $purchaseChild.'Root Order Item Id' ? $purchaseChild.'Root Order Item Id' : '',
+'externalIdentifierType': 'externalPurchaseRootOrderItemId',
+'owner': 'SIEBEL'
+},
+{
+'@type': 'ExternalReferenceOracle',
+'id': $purchaseChild.'Asset Integration Id' ? $purchaseChild.'Asset Integration Id' : '',
+'externalIdentifierType': 'externalPurchaseAssetIntegrationId',
+'owner': 'SIEBEL'
+},
+{
+'@type': 'ExternalReferenceOracle',
+'id': $purchaseChild.'Root Asset Integration Id' ? $purchaseChild.'Root Asset Integration Id' : '',
+'externalIdentifierType': 'externalPurchaseRootAssetIntegrationId',
+'owner': 'SIEBEL'
+},
+{
+'@type': 'ExternalReferenceOracle',
+'id': $purchaseChild.Name ? $purchaseChild.Name : '',
+'externalIdentifierType': 'externalPurchaseProductName',
+'owner': 'SIEBEL'
+}
+] : [])
+};
+
+$buildOrderExternalReference := function($orderId) {
+[
+{
+'@type': 'ExternalReferenceOracle',
+'id': $orderId ? $orderId : '',
+'externalIdentifierType': 'externalOrderId',
+'owner': 'SIEBEL'
+}
+]
+};
+
+$hasText := function($val) {
+$exists($val) and $trim($string($val)) != ''
+};
+$firstText := function($values) {
+(
+$matches := $filter($values, function($val) { $hasText($val) });
+$count($matches) > 0 ? $matches[0] : ''
+)
+};
+
+$lineItemIdFor := function($node) {
+$hasText($node.'Base Line Item Id') ? $node.'Base Line Item Id' : $node.Id
+};
+
+$normalizationMap := {
+"Time Based Offer": "TIME_BASED_OFFER"
+};
+
+$normalizeValue := function($value) {
+(
+$text := $hasText($value) ? $string($value) : '';
+$mapped := $lookup($normalizationMap, $text);
+$exists($mapped) ? $mapped : $text
+)
+};
+
+$productTypeFor := function($node) {
+(
+$productType := $node.'Product Type Code' = 'Product' and $node.'Product Type' = 'Time Based Offer' ? $node.'Product Type' : ($node.'Product Type Code'? $node.'Product Type Code': '');
+$normalizeValue($productType)
+)
+};
+
+$billingServiceTypeFor := function($node) {
+$normalizeValue($node.'Billing Service Type'? $node.'Billing Service Type': '')
+};
+
+$buildPlace := function($node) {
+(
+$placeId := $firstText([$node.'Ship To Address Id', $node.'Service Address Id', $node.'To Service Address Id']);
+$city := $firstText([$node.'Ship To City', $node.'Service Account City']);
+$country := $firstText([$node.'Ship To Country', $node.'Service Account Country']);
+$locality := $firstText([$node.'Ship To County', $node.'Service Account County']);
+$postcode := $firstText([$node.'Ship To Zip', $node.'Service Account Zip']);
+$stateOrProvince := $firstText([$node.'Ship To State', $node.'Ship To Province', $node.'Service Account State', $node.'Service Account Province']);
+$streetName := $firstText([$node.'Address', $node.'Ship To Address', $node.'Service Address']);
+$streetNr := $firstText([$node.'Ship To Address 2', $node.'Service Account Address 2']);
+$streetNrLast := $firstText([$node.'Ship To Address 3', $node.'Service Account Address 3']);
+$hasPlace := $hasText($placeId) or $hasText($city) or $hasText($country) or $hasText($locality) or $hasText($postcode) or $hasText($stateOrProvince) or $hasText($streetName) or $hasText($streetNr) or $hasText($streetNrLast);
+$hasPlace ? [
+{
+'@type': 'RelatedPlaceRefOrValueOracleDBE',
+'id': $placeId,
+'name': $streetName,
+'role': 'Shipping Address',
+'country': $country,
+'city': $city,
+'locality': $locality,
+'postcode': $postcode,
+'stateOrProvince': $stateOrProvince,
+'streetName': $streetName,
+'streetNr': $streetNr,
+'streetNrLast': $streetNrLast
+}
+] : []
+)
+};
+
+$buildOrderItemRelationship := function($node, $nodes) {
+(
+$assetIntegrationId := $firstText([$node.'Asset Integration Id']);
+$dependsOnLineItemId := $firstText([$node.'Depends On Line Item Id']);
+$dependsOnOrderNumber := $firstText([$node.'Depends On Order Number']);
+$moveTarget := $filter($nodes, function($candidate) {
+$tmfAction($node.'Action Code') = 'terminate' and
+$tmfAction($candidate.'Action Code') = 'add' and
+$hasText($assetIntegrationId) and
+$firstText([$candidate.'Related Asset Integration Id']) = $assetIntegrationId
+})[0];
+$moveTargetId := $exists($moveTarget) ? $lineItemIdFor($moveTarget) : '';
+$moveRelationship := $hasText($moveTargetId) ? [
+{
+'@type': 'OrderItemRelationship',
+'id': $moveTargetId,
+'relationshipType': 'moveTerminate'
+}
+] : [];
+$followOnRelationship := ($hasText($dependsOnLineItemId) and $hasText($dependsOnOrderNumber)) ? [
+{
+'@type': 'OrderItemRelationshipOracleDBE',
+'externalId': $dependsOnOrderNumber,
+'id': $dependsOnLineItemId,
+'relationshipType': 'FollowOnDependency'
+}
+] : [];
+$append($moveRelationship, $followOnRelationship)
+)
+};
+
+$buildSpecialRatingProfile := function($node) {
+(
+$profileId := $firstText([$node.'Special Rating List Id']);
+$profileName := $firstText([$node.'Special Rating List Name']);
+$maxItems := $firstText([$node.'Special Rating Max Items']);
+$ratingItems := $node.ListOfSWISpecialRatingListItems.SWISpecialRatingListItems;
+$ratingItemArray := $type($ratingItems) = "array" ? $ratingItems :
+$type($ratingItems) = "object" ? [$ratingItems] : [];
+$ratingItemData := $map(
+$filter($ratingItemArray, function($item) { $hasText($item.'Special Rating List Item') }),
+function($item) {
+{ 'name': 'Special Rating List Item', 'value': $string($item.'Special Rating List Item') }
+}
+);
+$profileData := $ratingItemData;
+$hasProfile := $hasText($profileId);
+$hasProfile ? $merge([
+{
+'@baseType': 'ProfileExtRating',
+'@type': 'SpecialRatingProfile'
+},
+$hasText($profileId) ? { 'id': $profileId } : {},
+$hasText($profileName) ? { 'name': $profileName } : {},
+$hasText($maxItems) ? { 'referenceCount': $number($maxItems) } : {},
+$count($profileData) > 0 ? { 'data': $profileData } : {}
+]) : undefined
+)
+};
+
+$buildPreviousValues := function($node) {
+(
+$previousValuesData := $node.ListOfSWIOrderItemPreviousValues.ListOfSWIOrderItemPreviousValues.SWIOrderItemPreviousValue;
+$hasPreviousBillingAccountId := $exists($previousValuesData.'Billing Account Id');
+$hasPreviousBillingAccount := $exists($previousValuesData.'Billing Account');
+$hasPreviousServiceAccountId := $exists($previousValuesData.'Service Account Id');
+$hasPreviousServiceAccount := $exists($previousValuesData.'Service Account');
+$hasPreviousOwnerAccountId := $exists($previousValuesData.'Owner Accnt Id');
+$hasPreviousOwnerAccount := $exists($previousValuesData.'Owner Account');
+$hasPreviousBillingProfileId := $exists($previousValuesData.'Billing Profile Id');
+$hasPreviousBillingProfileName := $exists($previousValuesData.'Billing Profile Name');
+$hasPreviousPriceListId := $exists($previousValuesData.'Price List Id');
+$hasPreviousPriceList := $exists($previousValuesData.'Price List');
+$hasPreviousBillingServiceType := $exists($previousValuesData.'Billing Service Type');
+$hasPreviousProductServiceId := $exists($previousValuesData.'Service Id');
+
+$previousBillingAccountId := $previousValuesData.'Billing Account Id';
+$previousBillingAccount := $previousValuesData.'Billing Account';
+$previousServiceAccountId := $previousValuesData.'Service Account Id';
+$previousServiceAccount := $previousValuesData.'Service Account';
+$previousOwnerAccountId := $previousValuesData.'Owner Accnt Id';
+$previousOwnerAccount := $previousValuesData.'Owner Account';
+$previousBillingProfileId := $previousValuesData.'Billing Profile Id';
+$previousBillingProfileName := $previousValuesData.'Billing Profile Name';
+$previousPriceListId := $previousValuesData.'Price List Id';
+$previousPriceList := $previousValuesData.'Price List';
+$previousBillingServiceType := $billingServiceTypeFor($previousValuesData);
+$previousProductServiceId := $previousValuesData.'Service Id';
+
+$relatedAccounts := $append(
+$append(
+$hasPreviousBillingAccountId ? [
+{
+'@type': 'RelatedAccountRefOracleDBE',
+'accountType': 'Billing Account',
+'id': $previousBillingAccountId,
+'name': $previousBillingAccount
+}
+] : [],
+$hasPreviousServiceAccountId ? [
+{
+'@type': 'RelatedAccountRefOracleDBE',
+'accountType': 'Service Account',
+'id': $previousServiceAccountId,
+'name': $previousServiceAccount
+}
+] : []
+),
+$hasPreviousOwnerAccountId ? [
+{
+'@type': 'RelatedAccountRefOracleDBE',
+'accountType': 'Owner Account',
+'id': $previousOwnerAccountId,
+'name': $previousOwnerAccount
+}
+] : []
+);
+
+$hasPrevious := $hasPreviousBillingAccountId or
+$hasPreviousServiceAccountId or
+$hasPreviousOwnerAccountId or
+$hasPreviousBillingProfileId or
+$hasPreviousBillingProfileName or
+$hasPreviousPriceListId or
+$hasPreviousPriceList or
+$hasPreviousBillingServiceType or
+$hasPreviousProductServiceId;
+
+$hasPrevious ?
+$merge([
+$hasPreviousBillingAccountId ? {
+'billingAccount': {
+'@type': 'BillingAccountRef',
+'id': $previousBillingAccountId,
+'name': $previousBillingAccount
+}
+} : {},
+$count($relatedAccounts) > 0 ? {
+'relatedAccount': $relatedAccounts
+} : {},
+($hasPreviousBillingProfileId or $hasPreviousBillingProfileName) ? {
+'billStructure': {
+'@type': 'BillStructureRefOracleDBE',
+'id': $previousBillingProfileId,
+'name': $hasPreviousBillingProfileName ? $previousBillingProfileName : ''
+}
+} : {},
+($hasPreviousPriceListId or $hasPreviousPriceList) ? {
+'priceList': {
+'@type': 'PriceListRefOracleDBE',
+'id': $previousPriceListId,
+'name': $previousPriceList
+}
+} : {},
+$hasPreviousBillingServiceType ? {
+'billingServiceType': $previousBillingServiceType
+} : {},
+$hasPreviousProductServiceId ? {
+'product': {
+'serviceId': $previousProductServiceId
+}
+} : {}
+])
+: undefined
+)
+};
+
+$isPromotionRoot := function($node) {
+$node.'Product Type Code' = 'Promotion' or $node.'Promotion Role' = 'Bundled Promotions'
+};
+
+$isPromotionComponent := function($node) {
+$not($isPromotionRoot($node)) and $hasText($node.'Prod Prom Id') and $hasText($node.'Prod Prom Instance Id') and $hasText($node.'Prod Prom Rule Id')
+};
+
+$promotionInstanceId := function($node) {
+$hasText($node.'Asset Integration Id') ? $node.'Asset Integration Id' : $node.Id
+};
+
+$isPromotionChild := function($node, $promotion) {
+$isPromotionComponent($node) and $node.'Prod Prom Id' = $promotion.'Product Id' and $node.'Prod Prom Instance Id' = $promotionInstanceId($promotion)
+};
+
+$hasPromotionParent := function($node, $nodes) {
+$count($filter($nodes, function($promotion) {
+$isPromotionRoot($promotion) and $isPromotionChild($node, $promotion)
+})) > 0
+};
+
+$buildTree := function($nodes, $parentId, $headerPriceListId, $headerPriceList, $accountId, $orderId, $promotionParent) {
+$map(
+$filter($nodes, function($n) {
+(
+$isNormalChild := $n.'Parent Order Item Id' = $parentId;
+$isMatchedPromotionChild := $exists($promotionParent) and $isPromotionRoot($promotionParent) and $isPromotionChild($n, $promotionParent);
+$isRootChildAlreadyUnderPromotion := $parentId = '' and $hasPromotionParent($n, $nodes);
+($isNormalChild and $not($isRootChildAlreadyUnderPromotion)) or $isMatchedPromotionChild
+)
+}),
+function($node) {(
+
+$hasPriceListId      := $exists($node.'Price List Id')    and $trim($string($node.'Price List Id'))    != '';
+$priceListId         := $hasPriceListId ? $node.'Price List Id' :
+$exists($headerPriceListId) and $trim($string($headerPriceListId)) != '' ?
+$headerPriceListId : '';
+
+$hasPriceList        := $exists($node.'Price List')    and $trim($string($node.'Price List'))    != '';
+$priceList           := $hasPriceList ? $node.'Price List':
+$exists($headerPriceList) and $trim($string($headerPriceList)) != '' ?
+$headerPriceList : '';
+
+$isBundleFlag           :=  $node.'Billing Type' = 'Service Bundle' or $node.'Product Type Code' = 'Commercial Bundle' or $node.'Product Type Code' = 'Promotion';
+$baseLineItemId         :=  $lineItemIdFor($node);
+
+
+$children := $buildTree($nodes, $node.Id, $priceListId, $priceList, $accountId, $orderId, $node);
+$purchaseChild := $filter($nodes, function($c) {
+$c.'Parent Order Item Id' = $node.Id and $contains($c.Name, "-PURCHASE")
+})[0];
+
+$hasPurchaseChild := $exists($purchaseChild);
+$purchaseListPrice := $hasPurchaseChild ? $safeNumber($purchaseChild.'List Price') : 0;
+$purchaseNetPrice := $hasPurchaseChild ? $safeNumber($purchaseChild.'Net Price') : 0;
+$purchaseHasDiscounts := $hasPurchaseChild and $purchaseListPrice != $purchaseNetPrice ? true: false;
+$netPrice := $safeNumber($node.'Net Price');
+$listPrice := $safeNumber($node.'List Price');
+$hasDiscounts := $listPrice != $netPrice ? true: false;
+
+$hasDiscountPercent := $exists($node.'Discount Percent') and $trim($string($node.'Discount Percent')) != '';
+$hasDiscountAmount  := $exists($node.'Discount Amount')  and $trim($string($node.'Discount Amount'))  != '';
+$hasUnitPrice       := $exists($node.'Unit Price')       and $trim($string($node.'Unit Price'))       != '';
+$previousValues     := $buildPreviousValues($node);
+$orderItemRelationships := $buildOrderItemRelationship($node, $nodes);
+
+$resolvedPriceType :=
+$hasDiscountPercent ? 'DiscountPercentageOverride' :
+$hasDiscountAmount  ? 'AmountOverride' :
+$hasUnitPrice       ? 'DiscountAmountOverride' :
+null;
+
+$base := $merge([
+{
+'@type': 'ProductOrderItemOracleDBE',
+'id': $baseLineItemId,
+'action': $tmfAction($node.'Action Code'),
+'quantity': $safeNumber($node.Quantity),
+'productOffering': {
+"@type": "ProductOfferingRef",
+'id': $node.'External Product Id'? $node.'External Product Id': '',
+'name': $node.'Name'
+},
+'priceList': {
+"@type": "PriceListRefOracleDBE",
+'id': $priceListId,
+'name': $priceList
+},
+'billingAccount': {
+"@type": "BillingAccountRef",
+'id': $node.'Billing Account Id'? $node.'Billing Account Id': '',
+'name': $node.'Billing Account'? $node.'Billing Account': ''
+},
+'relatedAccount': [
+{
+'@type': 'RelatedAccountRefOracleDBE',
+'accountType': 'Billing Account',
+'id': $node.'Billing Account Id'? $node.'Billing Account Id': '',
+'name': $node.'Billing Account'? $node.'Billing Account': ''
+},
+{
+'@type': 'RelatedAccountRefOracleDBE',
+'accountType': 'Service Account',
+'id': $node.'Service Account Id'? $node.'Service Account Id': '',
+'name': $node.'Service Account'? $node.'Service Account': ''
+},
+{
+'@type': 'RelatedAccountRefOracleDBE',
+'accountType': 'Owner Account',
+'id': $node.'Owner Accnt Id'? $node.'Owner Accnt Id': '',
+'name': $node.'Owner Account'? $node.'Owner Account': ''
+}
+],
+'billStructure': {
+'@type': 'BillStructureRefOracleDBE',
+'id': $node.'Billing Profile Id'? $node.'Billing Profile Id': '',
+'name': $node.'Billing Profile Name'? $node.'Billing Profile Name': ''
+},
+'billingServiceType': $billingServiceTypeFor($node),
+'billingType': $node.'Billing Type'? $node.'Billing Type': '',
+'externalReference': $buildExternalReference($node.'Integration Id', $node.'Root Order Item Id', $node.'Asset Integration Id', $node.'Root Asset Integration Id', $node.Id, $purchaseChild),
+'productType': $productTypeFor($node),
+'itemPrice': (
+$baseItemPrice := $merge([
+{
+"@type": "OrderPrice",
+'priceType': $node.'Price Type' = 'Recurring'? 'recurring' : 'oneTime',
+'recurringChargePeriod': $node.'Unit of Measure',
+'price': {
+'@type': 'Price',
+'dutyFreeAmount': { 'value': $listPrice, 'unit': $node.'Currency Code' },
+'taxIncludedAmount': { 'value': $listPrice, 'unit': $node.'Currency Code' }
+}
+},
+$hasDiscounts ?
+{
+'priceAlteration': [
+{
+"@type": "PriceAlteration",
+'priceType': 'AmountOverride',
+'price': {
+'@type': 'Price',
+'dutyFreeAmount': { 'unit': $node.'Currency Code', 'value': $netPrice },
+'taxIncludedAmount': { 'unit': $node.'Currency Code', 'value': $netPrice }
+}
+}
+]
+}
+: {}
+]);
+$purchaseItemPrice := $hasPurchaseChild ?
+$merge([
+{
+"@type": "OrderPrice",
+'priceType': $purchaseChild.'Price Type' = 'Recurring'? 'recurring' : 'oneTime',
+'recurringChargePeriod': $purchaseChild.'Unit of Measure',
+'price': {
+'@type': 'Price',
+'dutyFreeAmount': { 'value': $purchaseListPrice, 'unit': $purchaseChild.'Currency Code' },
+'taxIncludedAmount': { 'value': $purchaseListPrice, 'unit': $purchaseChild.'Currency Code' }
+}
+},
+$purchaseHasDiscounts ?
+{
+'priceAlteration': [
+{
+"@type": "PriceAlteration",
+'priceType': 'AmountOverride',
+'price': {
+'@type': 'Price',
+'dutyFreeAmount': { 'unit': $purchaseChild.'Currency Code', 'value': $purchaseNetPrice },
+'taxIncludedAmount': { 'unit': $purchaseChild.'Currency Code', 'value': $purchaseNetPrice }
+}
+}
+]
+}
+: {}
+]) : null;
+$hasPurchaseChild ? [$baseItemPrice, $purchaseItemPrice] : [$baseItemPrice]
+),
+'itemTotalPrice': (
+$promoType := $node.'Promotion Role';
+$mrc := $promoType = 'Bundled Promotions' ? $safeNumber($node.'Promotion MRC Total') : $safeNumber($node.'MRC CxTotal');
+$nrc := $promoType = 'Bundled Promotions' ? $safeNumber($node.'Promotion NRC Total') : $safeNumber($node.'NRC CxTotal');
+[
+{ "@type": "OrderPrice", 'priceType': 'recurring', 'price': { '@type': 'Price', 'dutyFreeAmount': { 'value': $mrc, 'unit': $node.'Currency Code' }, 'taxIncludedAmount': { 'value': $mrc, 'unit': $node.'Currency Code' } } },
+{ "@type": "OrderPrice", 'priceType': 'oneTime',   'price': { '@type': 'Price', 'dutyFreeAmount': { 'value': $nrc, 'unit': $node.'Currency Code' }, 'taxIncludedAmount': { 'value': $nrc, 'unit': $node.'Currency Code' } } }
+]
+),
+'product': {
+'@type': 'ProductRefOrValueOracleDBE',
+'id': $node.'Asset Integration Id',
+'name': $node.'Name',
+'serviceId': $node.'Service Id',
+'startDate': $node.'Service Start Date',
+'terminationDate': $node.'Effective End Date',
+'isBundle': $isBundleFlag,
+'place': $buildPlace($node),
+'billingAccount': {
+"@type": "BillingAccountRef",
+'id': $node.'Billing Account Id'? $node.'Billing Account Id': '',
+'name':$node.'Billing Account'? $node.'Billing Account': ''
+},
+'relatedAccount': [
+{
+'@type': 'RelatedAccountRefOracleDBE',
+'accountType': 'Billing Account',
+'id': $node.'Billing Account Id'? $node.'Billing Account Id': '',
+'name': $node.'Billing Account'? $node.'Billing Account': ''
+},
+{
+'@type': 'RelatedAccountRefOracleDBE',
+'accountType': 'Service Account',
+'id': $node.'Service Account Id'? $node.'Service Account Id': '',
+'name': $node.'Service Account'? $node.'Service Account': ''
+},
+{
+'@type': 'RelatedAccountRefOracleDBE',
+'accountType': 'Owner Account',
+'id': $node.'Owner Accnt Id'? $node.'Owner Accnt Id': '',
+'name': $node.'Owner Account'? $node.'Owner Account': ''
+}
+],
+'billStructure': {
+'@type': 'BillStructureRefOracleDBE',
+'id': $node.'Billing Profile Id'? $node.'Billing Profile Id': '',
+'name': $node.'Billing Profile Name'? $node.'Billing Profile Name': ''
+},
+'billingServiceType': $billingServiceTypeFor($node),
+'billingType': $node.'Billing Type'? $node.'Billing Type': '',
+'externalReference': $buildExternalReference($node.'Integration Id', $node.'Root Order Item Id', $node.'Asset Integration Id', $node.'Root Asset Integration Id', $node.Id, $purchaseChild),
+'productType': $productTypeFor($node),
+'productSpecification': { "@type": "ProductSpecificationRef", 'id': $node.'External Class Id'? $node.'External Class Id': '', 'name': $node.'Class Name' },
+'specialRatingProfile': $buildSpecialRatingProfile($node),
+'productCharacteristic': [(
+$xa := $node.ListOfSWIOrderItemXA.SWIOrderItemXA;
+$map(
+$type($xa) = "array" ? $xa :
+$type($xa) = "object" ? [$xa] : [],
+function($c) {
+$merge([
+{ '@type': "Characteristic", 'name': $c.Name, 'value': $c.LICValue, 'valueType': $c.'Property Type Code' },
+$hasText($c.PreviousLICValue) ? { '@type': "CharacteristicOracle", 'previousValue': $c.PreviousLICValue } : {}
+])
+}
+)
+)]
+}
+},
+$count($orderItemRelationships) > 0 ? { 'productOrderItemRelationship': $orderItemRelationships } : {},
+$exists($previousValues) ? { 'previousValues': $previousValues } : {}
+]);
+
+$filteredChildren := $filter($children, function($v) {
+$not($contains($v.productOffering.name, "-PURCHASE"))
+});
+
+$count($filteredChildren) > 0 ? $merge([$base, { 'productOrderItem': [$filteredChildren] }]) : $base )}
+)
+};
+
+$firstLineItem := $type($items) = "array" ? $items[0] : $type($items) = "object" ? $items : {};
+$requestedCompletionDate := $firstText([
+$firstLineItem.'Due Date',
+$firstLineItem.'Expected Delivery Date'
+]);
+
+$productOrder := {
+"@type": "ProductOrderOracle_Create",
+'externalId': SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Order Number',
+'requestedCompletionDate': $hasText($requestedCompletionDate) ? $requestedCompletionDate,
+'externalReference': $buildOrderExternalReference(SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].Id),
+'description': SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].Description,
+'priority': SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Order Priority',
+'orderTotalPrice': [
+{
+"@type": "OrderPrice",
+'priceType': 'recurring',
+'price': {
+'@type': 'Price',
+'dutyFreeAmount': { 'value': $safeNumber(SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'MRC Total'), 'unit': SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Currency Code' },
+'taxIncludedAmount': { 'value': $safeNumber(SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Tax Amount MRC') + $safeNumber(SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'MRC Total'), 'unit': SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Currency Code' }
+}
+},
+{
+"@type": "OrderPrice",
+'priceType': 'oneTime',
+'price': {
+'@type': 'Price',
+'dutyFreeAmount': { 'value': $safeNumber(SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'NRC Total'), 'unit': SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Currency Code' },
+'taxIncludedAmount': { 'value': $safeNumber(SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Tax Amount NRC') + $safeNumber(SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'NRC Total'), 'unit': SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Currency Code' }
+}
+}
+],
+'billingAccount': {
+"@type": "BillingAccountRef",
+'id': SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Billing Account Id',
+'name': SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Billing Account'
+},
+'productOrderItem': [$buildTree($items, "", SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Price List Id', SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Price List', SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Account Id', SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].Id)]
+};
+
+$safeNumber(SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].Revision) > 1 ?
+{
+'@type': 'ReviseProductOrderOracle_Create',
+'productOrder': $productOrder,
+'requestedVersionNumber': $safeNumber(SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].Revision),
+'baseOrderRef': {
+'@type': 'BaseOrderRefOracle',
+'externalId': SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Order Number'
+}
+} : $productOrder
+)

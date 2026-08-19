@@ -1,0 +1,50 @@
+{
+  "ViewMode":"All",
+  "PageSize": "1",
+  "LOVLanguageMode":"LIC",
+  "OutputIntObjectName": "SWICustomerPartyIO",
+  "QueryByTemplate": "true",
+  "SiebelMessageIn": {
+    "IntObjectFormat": "Siebel Hierarchical",
+    "MessageId": "",
+    "IntObjectName": "SWICustomerPartyIO",
+    "MessageType": "Integration Object",
+    "ListOfSWICustomerPartyIO": {
+      "Account": [
+        {
+          "Master Account Id": "",
+          "Location": "",
+          "Id": "='"& WorkflowInput.SiebelMessage.ListOfSWIAccountHierarchyIO.Account[0].'Id' &"'",
+          "Mod Id": "",
+          "Home Page": "",
+          "Conflict Id": "",
+          "Account Number": "",
+          "Name": "",
+          "Updated": "",
+          "AIA Integration Id": "",
+          "Type": "",
+          "Primary Billing Profile Id": "",
+          "operation": "",
+          "Primary Address Id": "",
+          "Integration Id": "",
+          "Price List Id": "",
+          "DUNS Number": "",
+          "Main Fax Number": "",
+          "Parent Account Id": "",
+          "Price List": "",
+          "Primary Contact Id": "",
+          "Primary Organization Id": "",
+          "Account Status": "",
+          "Primary Bill To Address Id": "",
+          "Account Type Code": "",
+          "Created": "",
+          "Updated By": "",
+          "Main Phone Number": "",
+          "Primary Ship To Address Id": "",
+          "Currency Code": "",
+          "Created By": ""
+        }
+      ]
+    }
+  }
+}

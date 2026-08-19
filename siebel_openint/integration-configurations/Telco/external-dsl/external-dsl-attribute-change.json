@@ -1,0 +1,136 @@
+{
+  "input": {
+    "type": "object"
+  },
+  "global": [
+    "rest_status",
+    "order_item_failed",
+    "tt_id"
+  ],
+  "output": {
+    "type": "object"
+  },
+  "steps": {
+    "ATTRIBUTE_VALUE_CHANGE": {
+      "type": "RESTOutbound",
+      "restSpec": "siebel-tmf-dbe",
+      "endPoint": "Workflow Process Manager/RunProcess",
+      "method": "POST",
+      "inputHeaders": {
+        "Content-Type": "application/json"
+      },
+      "queryParams": {
+        "matchrequestformat": "y"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput",
+            "transformationSpec": "POAttributeValueChange.json"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "POAttributeValueChange-FinalScript.json"
+          }
+        ]
+      },
+      "output": {
+        "global.rest_status": "${status}",
+        "global.order_item_failed": "${var order_item_failed = false; for(item: output.SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].ListOfSWIOrderItem.SWIOrderItem) { if(item.Status == \"Failed\") {order_item_failed = true; break; }} order_item_failed}"
+      }
+    },
+    "Trouble_Ticket": {
+      "type": "RESTOutbound",
+      "restSpec": "siebel-tmf-dbe",
+      "endPoint": "SWI Trouble Ticket Service/Insert",
+      "method": "POST",
+      "inputHeaders": {
+        "Content-Type": "application/json"
+      },
+      "queryParams": {
+        "matchrequestformat": "y"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "attribute-change-trouble-ticket-data-collection.json"
+          }
+        ]
+      },
+      "output": {
+        "global.tt_id": "${output.SiebelMessage.ListOfSWITroubleTicketIO.'Trouble Ticket'[0].Id}"
+      }
+    }
+  },
+  "response": {
+    "success": {
+      "dataCollection": [
+        {
+          "source": "ATTRIBUTE_VALUE_CHANGE"
+        }
+      ],
+      "transformation": [
+        {
+          "transformationSpec": "MatchRequest-POAttributeValueChange.json"
+        }
+      ]
+    },
+    "error": {
+      "dataCollection": [
+        {
+          "source": "Trouble_Ticket"
+        }
+      ],
+      "transformation": [
+        {
+          "transformationSpec": "MatchRequest-POAttributeChange_Trouble_Ticket.json"
+        }
+      ]
+    }
+  },
+  "transitions": {
+    "$start": {
+      "transitions": [
+        {
+          "target": "ATTRIBUTE_VALUE_CHANGE"
+        }
+      ]
+    },
+    "ATTRIBUTE_VALUE_CHANGE": {
+      "transitions": [
+        {
+          "condition": "${global.rest_status != '200'}",
+          "target": "$errorEnd"
+        },
+        {
+          "condition": "${global.order_item_failed == false}",
+          "target": "$end"
+        },
+        {
+          "condition": "${global.order_item_failed == true}",
+          "target": "Trouble_Ticket"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    },
+    "Trouble_Ticket": {
+      "transitions": [
+        {
+          "condition": "${global.tt_id != null && global.tt_id != ''}",
+          "target": "$end"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,351 @@
+{
+  "input": {
+    "type": "object"
+  },
+  "global": [
+    "rest_status",
+    "order_item_failed",
+    "order_status",
+    "tt_id"
+  ],
+  "output": {
+    "type": "object"
+  },
+  "steps": {
+    "SIEBEL_CALL_STATE": {
+      "type": "RESTOutbound",
+      "restSpec": "siebel-tmf-dbe",
+      "endPoint": "Workflow Process Manager/RunProcess",
+      "method": "POST",
+      "inputHeaders": {
+        "Content-Type": "application/json"
+      },
+      "queryParams": {
+        "matchrequestformat": "y"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput",
+            "transformationSpec": "POStateChangeTmfToSiebelMessage.json"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "POStateChangeTmfToSiebelMessage-FinalScript.json"
+          }
+        ]
+      },
+      "output": {
+        "global.rest_status": "${status}",
+        "global.order_status": "${output.SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Status'}"
+      }
+    },
+    "SIEBEL_CALL_CANCEL_STATE": {
+      "type": "RESTOutbound",
+      "restSpec": "siebel-tmf-dbe",
+      "endPoint": "Workflow Process Manager/RunProcess",
+      "method": "POST",
+      "inputHeaders": {
+        "Content-Type": "application/json"
+      },
+      "queryParams": {
+        "matchrequestformat": "y"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput",
+            "transformationSpec": "POCancelStateChangeTmfToSiebelMessage.json"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "POStateChangeTmfToSiebelMessage-FinalScript.json"
+          }
+        ]
+      },
+      "output": {
+        "global.rest_status": "${status}",
+        "global.order_status": "${output.SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Status'}"
+      }
+    },
+    "SIEBEL_CALL_ATTRIBUTE": {
+      "type": "RESTOutbound",
+      "restSpec": "siebel-tmf-dbe",
+      "endPoint": "Workflow Process Manager/RunProcess",
+      "method": "POST",
+      "inputHeaders": {
+        "Content-Type": "application/json"
+      },
+      "queryParams": {
+        "matchrequestformat": "y"
+      },
+        "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput",
+            "transformationSpec": "POAttributeValueChange.json"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "POAttributeValueChange-FinalScript.json"
+          }
+        ]
+      },
+      "output": {
+        "global.rest_status": "${status}",
+        "global.order_item_failed": "${var order_item_failed = false; for(item: output.SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].ListOfSWIOrderItem.SWIOrderItem) { if(item.Status == \"Failed\") {order_item_failed = true; break; }} order_item_failed}"
+      }
+    },
+    "Trouble_Ticket_State": {
+      "type": "RESTOutbound",
+      "restSpec": "siebel-tmf-dbe",
+      "endPoint": "SWI Trouble Ticket Service/Insert",
+      "method": "POST",
+      "inputHeaders": {
+        "Content-Type": "application/json"
+      },
+      "queryParams": {
+        "matchrequestformat": "y"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "state-change-trouble-ticket-data-collection.json"
+          }
+        ]
+      },
+      "output": {
+        "global.tt_id": "${output.SiebelMessage.ListOfSWITroubleTicketIO.'Trouble Ticket'[0].Id}"
+      }
+    },
+    "Trouble_Ticket_Cancel_State": {
+      "type": "RESTOutbound",
+      "restSpec": "siebel-tmf-dbe",
+      "endPoint": "SWI Trouble Ticket Service/Insert",
+      "method": "POST",
+      "inputHeaders": {
+        "Content-Type": "application/json"
+      },
+      "queryParams": {
+        "matchrequestformat": "y"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "cancel-state-change-trouble-ticket-data-collection.json"
+          }
+        ]
+      },
+      "output": {
+        "global.tt_id": "${output.SiebelMessage.ListOfSWITroubleTicketIO.'Trouble Ticket'[0].Id}"
+      }
+    },
+    "Trouble_Ticket_Attribute": {
+      "type": "RESTOutbound",
+      "restSpec": "siebel-tmf-dbe",
+      "endPoint": "SWI Trouble Ticket Service/Insert",
+      "method": "POST",
+      "inputHeaders": {
+        "Content-Type": "application/json"
+      },
+      "queryParams": {
+        "matchrequestformat": "y"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "attribute-change-trouble-ticket-data-collection.json"
+          }
+        ]
+      },
+      "output": {
+        "global.tt_id": "${output.SiebelMessage.ListOfSWITroubleTicketIO.'Trouble Ticket'[0].Id}"
+      }
+    }
+  },
+  "response": {
+    "success": {
+      "payload": {
+        "dataCollection": [
+          {
+            "source": "SIEBEL_CALL_ATTRIBUTE"
+          },
+          {
+            "source": "SIEBEL_CALL_STATE"
+          },
+          {
+            "source": "SIEBEL_CALL_CANCEL_STATE"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "MatchRequest-POEventChange.jsonata"
+          }
+        ]
+      },
+      "statusCode": 200
+    },
+    "error": {
+      "payload": {
+        "dataCollection": [
+          {
+            "source": "Trouble_Ticket_Attribute"
+          },
+          {
+            "source": "Trouble_Ticket_State"
+          },
+          {
+            "source": "Trouble_Ticket_Cancel_State"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "MatchRequest-POErrorEventChange.jsonata"
+          }
+        ]
+      },
+      "statusCode": 500
+    }
+  },
+  "transitions": {
+    "$start": {
+      "transitions": [
+        {
+          "condition": "${WorkflowInput.eventType == 'ProductOrderStateChangeEventOracle'}",
+          "target": "SIEBEL_CALL_STATE"
+        },
+        {
+          "condition": "${WorkflowInput.eventType == 'ProductOrderCreateEventOracle'}",
+          "target": "$end"
+        },
+        {
+          "condition": "${WorkflowInput.eventType == 'ReviseProductOrderStateChangeEvent'}",
+          "target": "$end"
+        },
+        {
+          "condition": "${WorkflowInput.eventType == 'ReviseProductOrderCreateEvent'}",
+          "target": "$end"
+        },
+        {
+          "condition": "${WorkflowInput.eventType == 'CancelProductOrderStateChangeEvent'}",
+          "target": "SIEBEL_CALL_CANCEL_STATE"
+        },
+        {
+          "condition": "${WorkflowInput.eventType == 'ProductOrderAttributeValueChangeEventOracle'}",
+          "target": "SIEBEL_CALL_ATTRIBUTE"
+        },
+        {
+          "target": "$end"
+        }
+      ]
+    },
+    "SIEBEL_CALL_STATE": {
+      "transitions": [
+        {
+          "condition": "${global.rest_status != '200'}",
+          "target": "$errorEnd"
+        },
+        {
+          "condition": "${global.order_status != null && global.order_status != \"Failed\"}",
+          "target": "$end"
+        },
+        {
+          "condition": "${global.order_status == \"Failed\"}",
+          "target": "Trouble_Ticket_State"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    },
+    "SIEBEL_CALL_CANCEL_STATE": {
+      "transitions": [
+        {
+          "condition": "${global.rest_status != '200'}",
+          "target": "$errorEnd"
+        },
+        {
+          "condition": "${global.order_status != null && global.order_status != \"Failed\"}",
+          "target": "$end"
+        },
+        {
+          "condition": "${global.order_status == \"Failed\"}",
+          "target": "Trouble_Ticket_Cancel_State"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    },
+    "SIEBEL_CALL_ATTRIBUTE": {
+      "transitions": [
+        {
+          "condition": "${global.rest_status != '200'}",
+          "target": "$errorEnd"
+        },
+        {
+          "condition": "${global.order_item_failed == false}",
+          "target": "$end"
+        },
+        {
+          "condition": "${global.order_item_failed == true}",
+          "target": "Trouble_Ticket_Attribute"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    },
+    "Trouble_Ticket_State": {
+      "transitions": [
+        {
+          "condition": "${global.tt_id != null && global.tt_id != ''}",
+          "target": "$end"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    },
+    "Trouble_Ticket_Cancel_State": {
+      "transitions": [
+        {
+          "condition": "${global.tt_id != null && global.tt_id != ''}",
+          "target": "$end"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    },
+    "Trouble_Ticket_Attribute": {
+      "transitions": [
+        {
+          "condition": "${global.tt_id != null && global.tt_id != ''}",
+          "target": "$end"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    }
+  }
+}

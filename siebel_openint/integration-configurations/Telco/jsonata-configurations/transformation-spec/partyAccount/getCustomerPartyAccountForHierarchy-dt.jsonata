@@ -1,0 +1,5 @@
+(
+    {
+      "PrimaryRowId": WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account[0].'Parent Account Id'
+    }
+)

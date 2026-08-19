@@ -1,0 +1,273 @@
+(
+  /****************
+  * Common setup
+  ****************/
+  $eventTime := $string($now());
+  $eventType := $.get_party_account.eventType;
+  $title := "PartyAccountAttributeValueChangeEvent";
+  $account := $.get_party_account.SiebelMessageOut.ListOfSWICustomerPartyIO.Account;
+  $comInvoiceProfileList := $account."ListOfCom Invoice Profile"."Com Invoice Profile";
+  $contacts := $account.ListOfContact.Contact;
+  $addresses := $account."ListOfCUT Address"."CUT Address";
+  $primaryBillingProfileId :=$exists($account."Primary Billing Profile Id")?$account."Primary Billing Profile Id": "";
+  $parentAccountId := $exists($account."Parent Account Id")?$account."Parent Account Id": "";
+  $primaryContactId := $exists($account."Primary Contact Id")?$account."Primary Contact Id": "";
+  $primaryAddressId := $.get_party_account.SiebelMessageOut.ListOfSWICustomerPartyIO.Account."Primary Address Id";
+
+  /***********************
+  * PRIMARY billStructure
+  ***********************/
+  $primaryBillStructure := $comInvoiceProfileList[(Id = $primaryBillingProfileId)].(
+    {
+      "@type": "BillStructure",
+      "name": Name,
+      "id": Id,
+      "cycleSpecification": {
+        "@type": "BillingCycleSpecification",
+        "billingDateShift": ($."Bill Cycle" != "" ? $number($."Bill Cycle")),
+        "billingPeriod": $lowercase($."Bill Frequency"),
+        "frequency": $lowercase($."Bill Frequency")
+      },
+      "format": {
+        "@type": "BillFormat",
+        "name": $lowercase($."Bill Type")
+      },
+      "presentationMedia": [
+        {
+          "@type": "BillPresentationMedia",
+          "name": $lowercase($."Media Type")
+        }
+      ]
+    }
+  );
+
+  /***********************
+  * SERVICE billStructure
+  ***********************/
+  $serviceBillStructures := $comInvoiceProfileList[(Id != $primaryBillingProfileId)].(
+    {
+      "@type": "BillStructure",
+      "name": Name,
+      "id": Id,
+      "cycleSpecification": {
+        "@type": "BillingCycleSpecification",
+        "billingDateShift": ($."Bill Cycle" != "" ? $number($."Bill Cycle")),
+        "billingPeriod": $lowercase($."Bill Frequency"),
+        "frequency": $lowercase($."Bill Frequency")
+      },
+      "format": {
+        "@type": "BillFormat",
+        "name": $lowercase($."Bill Type")
+      },
+      "presentationMedia": [
+        {
+          "@type": "BillPresentationMedia",
+          "name": $lowercase($."Media Type")
+        }
+      ]
+    }
+  );
+
+  /***********************
+  * Contacts
+  ***********************/
+  $contactList := $contacts.(
+    (
+      $cm := $append(
+        /* Address */
+        $addresses.(
+          {
+            "@type": "GeographicAddressContactMedium",
+            "preferred": (`Row Id` = $primaryAddressId ? true : false),
+            "mediumType": "PostalAddress",
+            "city": $."City",
+            "country": $."Country",
+            "postCode": $."Postal Code",
+            "street1": $."Street Address",
+            "street2": $."Street Address 2",
+            "stateOrProvince": $."State"
+          }
+        ),
+        /* Email + Phone */
+        $append(
+          ($exists($."Email Address") and $."Email Address" != "") ? [
+            {
+              "@type": "EmailContactMedium",
+              "mediumType": "Email",
+              "emailAddress": $."Email Address"
+            }
+          ] : [],
+          ($exists($."Cellular Phone #") and $."Cellular Phone #" != "") ? [
+            {
+              "@type": "PhoneContactMedium",
+              "mediumType": "Phone",
+              "phoneNumber": $."Cellular Phone #"
+            }
+          ] : []
+        )
+      );
+      $preferredContactMedium := $cm[`mediumType` != "PostalAddress" or `preferred` = true];
+
+      $merge(
+        [
+          {
+            "@type": "Contact",
+            "contactName": `First Name` & (`Middle Name` != "" ? " " & `Middle Name` & " " : " ") & `Last Name`,
+            "partyRoleType": $."Contact Person Title",
+            "contactType": (`Row Id` = $primaryContactId ? "primary" : "secondary"),
+            "salutation": `M/M`
+          }, $count($cm)>0 ? {
+            "contactMedium": [$preferredContactMedium]
+          } : {},
+          {
+            "relatedParty": [
+              {
+                "role": "owner",
+                "@type": "RelatedRelatedPartyOracle",
+                "partyOrPartyRole": {
+                  "@type": "RelatedPartyOracle",
+                  "@referredType": "Individual",
+                  "@baseType": "RelatedParty",
+                  "href": "",
+                  "id": $account."Account Number",
+                  "name": $account.Name
+                }
+              }
+            ]
+          }
+        ]
+      )
+    )
+  );
+
+  /***********************
+  * Removed fields `financialAccount` & `paymentPlan`, as these are not being consumed by the BRM
+  * Payment Plans
+  **********************
+  *$paymentPlans := $comInvoiceProfileList.(
+  *  {
+  *    "@type": "PaymentPlan",
+  *    "paymentMethod": {
+  *      "@type": "PaymentMethodRef",
+  *      "name": $."Payment Method",
+  *      "id": $."Id" & "-PayMthd"
+  *    },
+  *    "paymentFrequency": $."Bill Frequency",
+  *    "status": $."Status",
+  *    "totalAmount": {"unit": $account."Currency Code"},
+  *    "validFor": {
+  *      "startDateTime": $."Start Date",
+  *      "endDateTime": $."End Date"
+  *    }
+  *  }
+  *);
+  */
+
+  /***********************
+  * PartyAccount Body
+  ***********************/
+  $createEventBody := $merge(
+    [
+      {
+        "@type": "PartyAccount",
+        "accountType": ($lowercase($account."Type")="residential" ? "consumer": $lowercase($account."Type")),
+        "accountClass": ($lowercase($account."Account Type Code")="residential" ? "consumer": $lowercase($account."Account Type Code")),
+        "name": $account.Name,
+        "externalId": $account."Account Number",
+        "id": $account."Account Number",
+        "state": $lowercase($account."Account Status")
+      },
+      /* primary billStructure */
+      $count($primaryBillStructure)>0 ? {"billStructure": $primaryBillStructure} : {},
+      /* service billStructure */
+      $count($serviceBillStructures)>0 ? {"serviceBillStructure": [$serviceBillStructures]} : [],
+      $count($contactList)>0 ? {"contact": [$contactList]} : [],
+      /*
+      * Removed fields `financialAccount` & `paymentPlan`, as these are not being consumed by the BRM
+      *{
+      *  "financialAccount": {
+      *    "@type": "FinancialAccountRef",
+      *    "@referredType": "FinancialAccount",
+      *    "id": $account."Account Number",
+      *    "name": $account.Name
+      *  }
+      *},
+      *$count($paymentPlans)>0 ? {"paymentPlan": $paymentPlans} : {},
+      */
+      $count($comInvoiceProfileList)>0 ? {
+        "defaultPaymentMethod": $comInvoiceProfileList[(Id = $primaryBillingProfileId)].(
+          {
+            "@type": "PaymentMethodRef",
+            "href": "",
+            "id": "",
+            "name": $."Payment Method"
+          }
+        )
+      } : {},
+      $.global.isParentAccountEvent ? {
+        "accountRelationship": ($parentAccountId != "" ? 
+        	[
+        		{
+          	  "@type": "AccountRelationship",
+          	  "relationshipType": "Parent",
+          	  "billStructure": {
+          	      "id": $primaryBillingProfileId
+          	  },
+          	  "account": {
+          	    "@type": "AccountRef",
+          	    "@referredType": "BillingAccount",
+          	    "id": $parentAccountId,
+          	    "name": $.global.parentAccountName,
+          	    "billStructure": {
+          	      "id": $.global.parentAccountPrimaryBillPrfId
+          	    }
+          	  }
+          	}
+        	] : []
+        )
+      } : {}
+    ]
+  );
+  /***********************
+  * Final Event
+  ***********************/
+  {
+    "eventId": (
+      $hex := "0123456789abcdef";
+      $pick := function() { $substring($hex, $floor($random()*16), 1) };
+      $lowercase(
+        $pick()&$pick()&$pick()&$pick()&$pick()&$pick()&$pick()&$pick() & "-" &
+        $pick()&$pick()&$pick()&$pick() & "-" &
+        $pick()&$pick()&$pick()&$pick() & "-" &
+        $pick()&$pick()&$pick()&$pick() & "-" &
+        $pick()&$pick()&$pick()&$pick()&
+        $pick()&$pick()&$pick()&$pick()&
+        $pick()&$pick()&$pick()&$pick()
+      )
+    ),
+    "eventTime": $eventTime,
+    "eventType": $title,
+    "correlationId": ($exists($account."Account Number") and $account."Account Number" != "" ? $account."Account Number" & "_" : "") & $string($millis()),
+    "domain": "commercial",
+    "title": $title,
+    "description": $title,
+    "priority": "",
+    "timeOcurred": $eventTime,
+    "fieldPath": "",
+    "@baseType": "Event",
+    "@type": "Event",
+    "event": { "partyAccount": $createEventBody },
+    "reportingSystem": {
+      "id": "-",
+      "name": "-",
+      "@type": "ReportingResource",
+      "@referredType": "LogicalResource"
+    },
+    "source": {
+      "id": "-",
+      "name": "-",
+      "@type": "ReportingResource",
+      "@referredType": "LogicalResource"
+    }
+  }
+)

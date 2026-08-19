@@ -1,0 +1,220 @@
+(
+    $eventTime := $string($now());
+    $eventType := $.WorkflowInput.eventType;
+    $title := "PartyAccount" & $uppercase($substring($eventType, 0, 1)) & $substring($eventType, 1)  &  "Event";
+    $accountType := $lowercase($.WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account."Type");
+    $accountClass := $lowercase($.WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account."Account Type Code");
+    $primaryContactId := $.WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account."Primary Contact Id";
+    $primaryBillingProfileId := $.WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account."Primary Billing Profile Id";
+    $comInvoiceProfileList := $.WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account."ListOfCom Invoice Profile"."Com Invoice Profile";
+    $account := $.WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account;
+    $listOfContact := $.WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account.ListOfContact.Contact;
+
+    /* This event body will be used for `create` and `attributeValueChange` */
+    $createEventBody := (
+        {
+            "@type": "PartyAccount",
+            "accountType": ( $accountType = "residential" ? "consumer" : $accountType ),
+            "accountClass": ( $accountClass = "residential" ? "consumer" : $accountClass ),
+            "name": $.WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account.Name,
+            "externalId": $.WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account."Account Number",
+            "id": $.WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account."Account Number",
+            "state": $lowercase(
+                $.WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account."Account Status"
+            ),
+            "billStructure": $comInvoiceProfileList[(`Id`=$primaryBillingProfileId)].{
+                "@type": "BillStructure",
+                "name": `Name`,
+                "id": `Id`,
+                "cycleSpecification": {
+                    "@type": "BillingCycleSpecification",
+                    "billingDateShift": (
+                        $bcd := `Bill Cycle`;
+                        $bcd != "" ? $number($bcd)
+                    ),
+                    "billingPeriod": $lowercase(`Bill Frequency`),
+                    "frequency": $lowercase(`Bill Frequency`)
+                },
+                "format": {
+                    "@type": "BillFormat",
+                    "name": $lowercase(`Bill Type`)
+                },
+                "presentationMedia": [
+                    {
+                        "@type": "BillPresentationMedia",
+                        "name": $lowercase(`Media Type`)
+                    }
+                ]
+            },
+            "serviceBillStructure": [
+                $comInvoiceProfileList[(`Id`!=$primaryBillingProfileId)].{
+                    "@type": "BillStructure",
+                    "name": `Name`,
+                    "id": `Id`,
+                    "cycleSpecification": {
+                        "@type": "BillingCycleSpecification",
+                        "billingDateShift": (
+                            $bcd := `Bill Cycle`;
+                            $bcd != "" ? $number($bcd)
+                        ),
+                        "billingPeriod": $lowercase(`Bill Frequency`),
+                        "frequency": $lowercase(`Bill Frequency`)
+                    },
+                    "format": {
+                        "@type": "BillFormat",
+                        "name": $lowercase(`Bill Type`)
+                    },
+                    "presentationMedia": [
+                        {
+                            "@type": "BillPresentationMedia",
+                            "name": $lowercase(`Media Type`)
+                        }
+                    ]
+                }
+            ],
+            "contact": [
+                $listOfContact.{
+                    "@type": "Contact",
+                    "contactName": `First Name` & (`Middle Name` != "" ? " " & `Middle Name` & " " : " ") & `Last Name`,
+                    "partyRoleType": `Contact Person Title`,
+                    "contactType": (`Row Id` = $primaryContactId ? "primary" : "secondary"),
+                    "salutation": `M/M`,
+                    "contactMedium": [
+                        {
+                            "@type": "GeographicAddressContactMedium",
+                            "preferred": true,
+                            "mediumType": "PostalAddress",
+                            "city": $account."ListOfCUT Address"."CUT Address"[0].City,
+                            "country": $account."ListOfCUT Address"."CUT Address"[0].Country,
+                            "postCode": $account."ListOfCUT Address"."CUT Address"[0]."Postal Code",
+                            "street1": $account."ListOfCUT Address"."CUT Address"[0]."Street Address",
+                            "street2": $account."ListOfCUT Address"."CUT Address"[0]."Street Address 2",
+                            "stateOrProvince": $account."ListOfCUT Address"."CUT Address"[0].State
+                        },
+                        {
+                            "@type": "EmailContactMedium",
+                            "mediumType": "Email",
+                            "emailAddress": $."Email Address"
+                        },
+                        {
+                            "@type": "PhoneContactMedium",
+                            "mediumType": "Phone",
+                            "phoneNumber": $."Cellular Phone #"
+                        }
+                    ],
+                    "relatedParty": [
+                        {
+                            "role": "owner",
+                            "@type": "RelatedRelatedPartyOracle",
+                            "partyOrPartyRole": {
+                                "@type": "RelatedPartyOracle",
+                                "@referredType": "Individual",
+                                "@baseType": "RelatedParty",
+                                "href": "",
+                                "id": $account."Account Number",
+                                "name": $account."Name"
+                            }
+                        }
+                    ]
+                }
+            ],
+            "defaultPaymentMethod": {
+                "@type": "PaymentMethodRef",
+                "href": "",
+                "id": "",
+                "name": $.WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account."ListOfCom Invoice Profile"."Com Invoice Profile"[0]."Payment Method"
+            },
+            "relatedParty": [
+                {
+                    "role": "owner",
+                    "@type": "RelatedRelatedPartyOracle",
+                    "partyOrPartyRole": {
+                        "@type": "RelatedPartyOracle",
+                        "@referredType": "Individual",
+                        "@baseType": "RelatedParty",
+                        "href": "",
+                        "id": $.WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account."Account Number",
+                        "name": $.WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account."Name"
+                    }
+                }
+            ],
+            "accountRelationship": [
+                {
+                    "@type": "AccountRelationship",
+                    "relationshipType": "Parent",
+                    "validFor": {
+                        "startDateTime": "",
+                        "endDateTime": ""
+                    },
+                    "billStructure": {
+                        "id": $.WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account."Primary Billing Profile Id"
+                    },
+                    "account": {
+                        "@type": "AccountRef",
+                        "@referredType": "BillingAccount",
+                        "id": $.global.parentAccountId,
+                        "name": $.global.parentAccountName,
+                        "billStructure": {
+                            "id": $.global.parentAccountPrimaryBillPrfId
+                        }
+                    }
+                }
+            ]
+        }
+    );
+
+    /* This event body will be used for `stateChange` */
+    $stateChangeEventBody := (
+        {
+            "@type": "PartyAccount",
+            "id": $.WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account."Account Number",
+            "state": $lowercase(
+                $.WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account."Account Status"
+            )
+        }
+    );
+
+    /* final body - start */
+    {
+        "eventId": (
+            $hex := "0123456789abcdef";
+            $pick := function() { $substring($hex, $floor($random()*16), 1) };
+            $lowercase(
+                $pick()&$pick()&$pick()&$pick()&$pick()&$pick()&$pick()&$pick() & "-" &
+                $pick()&$pick()&$pick()&$pick() & "-" &
+                $pick()&$pick()&$pick()&$pick() & "-" &
+                $pick()&$pick()&$pick()&$pick() & "-" &
+                $pick()&$pick()&$pick()&$pick()&
+                $pick()&$pick()&$pick()&$pick()&
+                $pick()&$pick()&$pick()&$pick()
+            )
+        ),
+        "eventTime": $eventTime,
+        "eventType": $title,
+        "correlationId": ($exists($account."Account Number") and $account."Account Number" != "" ? $account."Account Number" & "_" : "") & $string($millis()),
+        "domain": "commercial",
+        "title": $title,
+        "description": $title,
+        "priority": "",
+        "timeOcurred": $eventTime,
+        "fieldPath": "",
+        "@baseType": "Event",
+        "@type": "Event",
+        "event": {
+            "partyAccount": ( $eventType = "stateChange" ? $stateChangeEventBody : $createEventBody )
+        },
+        "reportingSystem": {
+            "id": "-",
+            "name": "-",
+            "@type": "ReportingResource",
+            "@referredType": "LogicalResource"
+        },
+        "source": {
+            "id": "-",
+            "name": "-",
+            "@type": "ReportingResource",
+            "@referredType": "LogicalResource"
+        }
+    }
+    /* final body - end */
+)

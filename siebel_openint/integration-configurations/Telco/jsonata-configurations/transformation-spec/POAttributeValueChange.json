@@ -1,0 +1,137 @@
+(
+  $statusMap := {
+    "pending": "Open",
+    "inProgress": "Open",
+    "partial": "Open",
+    "amending": "Open",
+    "failed": "Failed",
+    "pendingCancellation": "Pending Cancel",
+    "cancelled": "Cancelled",
+    "completed": "Complete"
+  };
+
+  $fulfillmentStatusMap := {
+    "pending": "Pending",
+    "inProgress": "In Progress",
+    "partial": "Partially Fulfilled",
+    "amending": "Amending",
+    "failed": "Failed",
+    "pendingCancellation": "Pending Cancel",
+    "cancelled": "Cancelled",
+    "completed": "Complete"
+  };
+
+  $statusParse := function($orderItemState) {
+    $split($orderItemState, ".")[0]
+  };
+
+  $externalReferenceId := function($externalReference, $externalIdentifierType) {
+    (
+      $references := $type($externalReference) = "array" ? $externalReference :
+        $type($externalReference) = "object" ? [$externalReference] : [];
+      $match := $filter($references, function($reference) {
+        $reference.externalIdentifierType = $externalIdentifierType
+      })[0];
+      $exists($match.id) ? $match.id : ""
+    )
+  };
+
+  $asArray := function($value) {
+    $exists($value) ? ($type($value) = "array" ? $value : [$value]) : []
+  };
+
+  $hasText := function($value) {
+    $exists($value) and $trim($string($value)) != "" and $lowercase($trim($string($value))) != "null"
+  };
+
+  $lineItemDateUpdate := function($item) {
+    $merge([
+      $hasText($item.product.startDate) ? { "Service Start Date": $item.product.startDate } : {},
+      $hasText($item.product.terminationDate) ? { "Effective End Date": $item.product.terminationDate } : {}
+    ])
+  };
+
+  $allProductOrderItems := function($items) {
+    $reduce($asArray($items), function($accumulator, $item) {
+      $append(
+        $accumulator,
+        $append([$item], $allProductOrderItems($item.productOrderItem))
+      )
+    }, [])
+  };
+
+  $orderReferenceId := function($productOrder) {
+    (
+      $headerOrderId := $externalReferenceId($productOrder.externalReference, "externalOrderId");
+      $items := $allProductOrderItems($productOrder.productOrderItem);
+      $itemWithOrderId := $filter($items, function($item) {
+        $externalReferenceId($item.externalReference, "externalOrderId") != "" or
+        $externalReferenceId($item.product.externalReference, "externalOrderId") != ""
+      })[0];
+      $itemOrderId := $externalReferenceId($itemWithOrderId.externalReference, "externalOrderId");
+      $productOrderId := $externalReferenceId($itemWithOrderId.product.externalReference, "externalOrderId");
+      $headerOrderId != "" ? $headerOrderId : ($itemOrderId != "" ? $itemOrderId : $productOrderId)
+    )
+  };
+
+  $lineItemId := function($item) {
+    (
+      $itemLineItemId := $externalReferenceId($item.externalReference, "externalOrderItemID");
+      $productLineItemId := $externalReferenceId($item.product.externalReference, "externalOrderItemID");
+      $itemLineItemId != "" ? $itemLineItemId : ($productLineItemId != "" ? $productLineItemId : $item.id)
+    )
+  };
+
+  $productOrderItems := $allProductOrderItems(event.productOrder.productOrderItem);
+
+  {
+    "Backup Order Flag": "N",
+    "Cascade Down Flag": "N",
+    "Object Id": "SWIOrderUpsert",
+    "ProcessName": "SWIOrderUpsert",
+    "SiebelMessage": {
+      "IntObjectFormat": "Siebel Hierarchical",
+      "IntObjectName": "SWIOrderIO",
+      "MessageType": "Integration Object",
+      "ListOfSWIOrderIO": {
+        "SWIOrder": [
+          {
+            "Id": $orderReferenceId(event.productOrder),
+            "Order Type": "Sales Order",
+            "Status": $lookup($statusMap, $statusParse(event.productOrder.state)),
+            "Delivery Status": $lookup($fulfillmentStatusMap, $statusParse(event.productOrder.state)),
+            "ListOfSWIOrderItem": {
+              "SWIOrderItem": $reduce($productOrderItems, function($accumulator, $item) {
+                (
+                  $lineItemUpdate := $merge([{
+                    "Id": $lineItemId($item),
+                    "Status": $lookup($statusMap, $statusParse($item.state)),
+                    "Delivery Status": $lookup($fulfillmentStatusMap, $statusParse($item.state)),
+                    "Integration Id": $externalReferenceId($item.externalReference, "externalIntegrationId"),
+                    "Root Order Item Id": $externalReferenceId($item.externalReference, "externalRootOrderItemId"),
+                    "Asset Integration Id": $externalReferenceId($item.externalReference, "externalAssetIntegrationId"),
+                    "Root Asset Integration Id": $externalReferenceId($item.externalReference, "externalRootAssetIntegrationId")
+                  }, $lineItemDateUpdate($item)]);
+                  $purchaseItemId := $externalReferenceId($item.externalReference, "externalPurchaseItemId");
+                  $purchaseLineItemUpdate := $merge([{
+                    "Id": $purchaseItemId,
+                    "Status": $lookup($statusMap, $statusParse($item.state)),
+                    "Delivery Status": $lookup($fulfillmentStatusMap, $statusParse($item.state)),
+                    "Integration Id": $externalReferenceId($item.externalReference, "externalPurchaseIntegrationId"),
+                    "Root Order Item Id": $externalReferenceId($item.externalReference, "externalPurchaseRootOrderItemId"),
+                    "Asset Integration Id": $externalReferenceId($item.externalReference, "externalPurchaseAssetIntegrationId"),
+                    "Root Asset Integration Id": $externalReferenceId($item.externalReference, "externalPurchaseRootAssetIntegrationId")
+                  }, $lineItemDateUpdate($item)]);
+                  $append(
+                    $accumulator,
+                    $purchaseItemId != "" ? [$lineItemUpdate, $purchaseLineItemUpdate] : [$lineItemUpdate]
+                  )
+                )
+              }, [])
+            }
+          }
+        ]
+      }
+    }
+  }
+)

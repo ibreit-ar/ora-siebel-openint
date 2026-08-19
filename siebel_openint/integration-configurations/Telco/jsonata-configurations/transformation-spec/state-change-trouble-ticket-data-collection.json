@@ -1,0 +1,67 @@
+(
+  $locale := global.language;
+  $abstract := $getTranslatedMapping("troubleTicket.osm.submitOrder.abstract", "localized-messages", $locale);
+  $accountId := WorkflowInput.event.productOrder.billingAccount.id ? WorkflowInput.event.productOrder.billingAccount.id : WorkflowInput.event.productOrder.accountId ? WorkflowInput.event.productOrder.accountId : "88-3EVIH1";
+  $externalReferenceId := function($externalReference, $externalIdentifierType) {
+    (
+      $references := $type($externalReference) = "array" ? $externalReference :
+        $type($externalReference) = "object" ? [$externalReference] : [];
+      $match := $filter($references, function($reference) {
+        $reference.externalIdentifierType = $externalIdentifierType
+      })[0];
+      $exists($match.id) ? $match.id : ""
+    )
+  };
+  $asArray := function($value) {
+    $exists($value) ? ($type($value) = "array" ? $value : [$value]) : []
+  };
+  $allProductOrderItems := function($items) {
+    $reduce($asArray($items), function($accumulator, $item) {
+      $append(
+        $accumulator,
+        $append([$item], $allProductOrderItems($item.productOrderItem))
+      )
+    }, [])
+  };
+  $orderReferenceId := function($productOrder) {
+    (
+      $headerOrderId := $externalReferenceId($productOrder.externalReference, "externalOrderId");
+      $items := $allProductOrderItems($productOrder.productOrderItem);
+      $itemWithOrderId := $filter($items, function($item) {
+        $externalReferenceId($item.externalReference, "externalOrderId") != "" or
+        $externalReferenceId($item.product.externalReference, "externalOrderId") != ""
+      })[0];
+      $itemOrderId := $externalReferenceId($itemWithOrderId.externalReference, "externalOrderId");
+      $productOrderId := $externalReferenceId($itemWithOrderId.product.externalReference, "externalOrderId");
+      $headerOrderId != "" ? $headerOrderId : ($itemOrderId != "" ? $itemOrderId : $productOrderId)
+    )
+  };
+  $orderId := $orderReferenceId(WorkflowInput.event.productOrder);
+  {
+    "SiebelMessage": {
+      "IntObjectFormat": "Siebel Hierarchical",
+      "IntObjectName": "SWITroubleTicketIO",
+      "MessageType": "Integration Object",
+      "ListOfSWITroubleTicketIO": {
+        "Trouble Ticket": [
+          {
+            "Abstract": $abstract,
+            "Id": "1-234",
+            "Account Id": $accountId,
+            "Status": "Open",
+            "Severity": "4-Low",
+            "ListOfSWI Order Failure" : {
+              "SWI Order Failure": [
+                {
+                  "Common Order Id": $orderId,
+                  "Order Id": $orderId,
+                  "Severity": "4-Low"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+)

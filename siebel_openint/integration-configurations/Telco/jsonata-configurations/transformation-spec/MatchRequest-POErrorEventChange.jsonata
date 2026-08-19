@@ -1,0 +1,1 @@
+$exists($.Trouble_Ticket_Cancel_State) ? $.Trouble_Ticket_Cancel_State : $exists($.Trouble_Ticket_State) ? $.Trouble_Ticket_State : $exists($.Trouble_Ticket_Attribute) ? $.Trouble_Ticket_Attribute : {}

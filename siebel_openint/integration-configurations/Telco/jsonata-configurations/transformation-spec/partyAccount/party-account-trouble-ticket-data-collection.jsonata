@@ -1,0 +1,28 @@
+(
+	$errorMessage := WorkflowInput.error;
+	$locale := global.language;
+	$abstractPrefix := $getTranslatedMapping("troubleTicket.account.brmSync.abstract", "localized-messages", $locale);
+
+	{
+	  "SiebelMessage": {
+	    "IntObjectFormat": "Siebel Hierarchical",
+	    "IntObjectName": "SWITroubleTicketIO",
+	    "MessageType": "Integration Object",
+	    "ListOfSWITroubleTicketIO": {
+	      "Trouble Ticket": [
+	        {
+	          "Abstract": $substring($abstractPrefix &
+                $errorMessage.code &
+                " | " & $errorMessage.message &
+                " | " & $errorMessage.type &
+                " | " & $errorMessage.status , 0, 100),
+	          "Id": "1-234",
+	          "Account Id": WorkflowInput.payload.event.partyAccount.id,
+	          "Status": "Open",
+	          "Severity": "4-Low"
+	        }
+	      ]
+	    }
+	  }
+	}
+)

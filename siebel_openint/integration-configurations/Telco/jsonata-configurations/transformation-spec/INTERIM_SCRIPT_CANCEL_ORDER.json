@@ -1,0 +1,21 @@
+(
+$orderData := SiebelMessage.ListOfSWIOrderIO.SWIOrder;
+$order := $type($orderData) = "array" ? $orderData[0] : $orderData;
+
+{
+'@type': 'CancelProductOrderOracle_Create',
+'cancellationReason': $order.'Cancel Reason',
+'productOrder': {
+'@type': 'ProductOrderRefOracle',
+'externalId': $order.'Order Number',
+'externalReference': [
+{
+'@type': 'ExternalReferenceOracle',
+'id': $order.Id ? $order.Id : '',
+'externalIdentifierType': 'externalOrderId',
+'owner': 'SIEBEL'
+}
+]
+}
+}
+)

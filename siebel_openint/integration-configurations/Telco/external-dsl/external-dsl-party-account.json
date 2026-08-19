@@ -1,0 +1,754 @@
+{
+  "input": {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "additionalProperties": true,
+    "properties": {
+      "eventType": {
+        "type": "string"
+      },
+      "SiebelMessage": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "IntObjectFormat": {
+            "type": "string"
+          },
+          "MessageId": {
+            "type": "string"
+          },
+          "IntObjectName": {
+            "type": "string"
+          },
+          "MessageType": {
+            "type": "string"
+          },
+          "ListOfSWICustomerPartyIO": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "Account": {
+                "type": "object",
+                "additionalProperties": true,
+                "properties": {
+                  "Master Account Id": {
+                    "type": "string"
+                  },
+                  "Location": {
+                    "type": "string"
+                  },
+                  "Home Page": {
+                    "type": "string"
+                  },
+                  "Account Number": {
+                    "type": "string"
+                  },
+                  "Name": {
+                    "type": "string"
+                  },
+                  "Type": {
+                    "type": "string"
+                  },
+                  "Primary Billing Profile Id": {
+                    "type": "string"
+                  },
+                  "Parent Account Name": {
+                    "type": "string"
+                  },
+                  "Row Id": {
+                    "type": "string"
+                  },
+                  "Primary Address Id": {
+                    "type": "string"
+                  },
+                  "Integration Id": {
+                    "type": "string"
+                  },
+                  "Price List Id": {
+                    "type": "string"
+                  },
+                  "DUNS Number": {
+                    "type": "string"
+                  },
+                  "Main Fax Number": {
+                    "type": "string"
+                  },
+                  "Parent Account Id": {
+                    "type": "string"
+                  },
+                  "Price List": {
+                    "type": "string"
+                  },
+                  "Primary Organization Id": {
+                    "type": "string"
+                  },
+                  "Primary Contact Id": {
+                    "type": "string"
+                  },
+                  "Account Status": {
+                    "type": "string"
+                  },
+                  "Primary Bill To Address Id": {
+                    "type": "string"
+                  },
+                  "Account Type Code": {
+                    "type": "string"
+                  },
+                  "Created": {
+                    "type": "string"
+                  },
+                  "Main Phone Number": {
+                    "type": "string"
+                  },
+                  "Primary Ship To Address Id": {
+                    "type": "string"
+                  },
+                  "Currency Code": {
+                    "type": "string"
+                  },
+                  "ListOfCUT Address": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "properties": {
+                      "CUT Address": {
+                        "type": "array",
+                        "items": {
+                          "properties": {
+                            "Province": {
+                              "type": "string"
+                            },
+                            "Main Address Flag": {
+                              "type": "string"
+                            },
+                            "Street Address": {
+                              "type": "string"
+                            },
+                            "Address Type": {
+                              "type": "string"
+                            },
+                            "County": {
+                              "type": "string"
+                            },
+                            "Country": {
+                              "type": "string"
+                            },
+                            "End Date": {
+                              "type": "string"
+                            },
+                            "State": {
+                              "type": "string"
+                            },
+                            "Street Address 2": {
+                              "type": "string"
+                            },
+                            "Row Id": {
+                              "type": "string"
+                            },
+                            "Ship Address Flag": {
+                              "type": "string"
+                            },
+                            "Integration Id": {
+                              "type": "string"
+                            },
+                            "Disable DataCleansing": {
+                              "type": "string"
+                            },
+                            "Postal Code": {
+                              "type": "string"
+                            },
+                            "Email Address": {
+                              "type": "string"
+                            },
+                            "Bill Address Flag": {
+                              "type": "string"
+                            },
+                            "Start Date": {
+                              "type": "string"
+                            },
+                            "City": {
+                              "type": "string"
+                            },
+                            "Address Name": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "Province",
+                            "Street Address",
+                            "County",
+                            "Country",
+                            "State",
+                            "Street Address 2",
+                            "Row Id",
+                            "Postal Code",
+                            "Email Address",
+                            "City",
+                            "Address Name"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "CUT Address"
+                    ]
+                  },
+                  "ListOfContact": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "properties": {
+                      "Contact": {
+                        "type": "array",
+                        "items": {
+                          "properties": {
+                            "Contact Person Title": {
+                              "type": "string"
+                            },
+                            "Suppress All Calls": {
+                              "type": "string"
+                            },
+                            "Gender": {
+                              "type": "string"
+                            },
+                            "Fax Phone #": {
+                              "type": "string"
+                            },
+                            "Suppress All Faxes": {
+                              "type": "string"
+                            },
+                            "Last Name": {
+                              "type": "string"
+                            },
+                            "Home Phone #": {
+                              "type": "string"
+                            },
+                            "Middle Name": {
+                              "type": "string"
+                            },
+                            "Row Id": {
+                              "type": "string"
+                            },
+                            "Job Title": {
+                              "type": "string"
+                            },
+                            "Consumer Link": {
+                              "type": "string"
+                            },
+                            "Suppress All Mailings": {
+                              "type": "string"
+                            },
+                            "Integration Id": {
+                              "type": "string"
+                            },
+                            "Status": {
+                              "type": "string"
+                            },
+                            "Suppress All Emails": {
+                              "type": "string"
+                            },
+                            "Marital Status": {
+                              "type": "string"
+                            },
+                            "Social Security Number": {
+                              "type": "string"
+                            },
+                            "Primary Organization Id": {
+                              "type": "string"
+                            },
+                            "Cellular Phone #": {
+                              "type": "string"
+                            },
+                            "Email Address": {
+                              "type": "string"
+                            },
+                            "Work Phone #": {
+                              "type": "string"
+                            },
+                            "Date of Birth": {
+                              "type": "string"
+                            },
+                            "Alias": {
+                              "type": "string"
+                            },
+                            "First Name": {
+                              "type": "string"
+                            },
+                            "Mother Maiden Name": {
+                              "type": "string"
+                            },
+                            "M/M": {
+                              "type": "string"
+                            },
+                            "Currency Code": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "Contact Person Title",
+                            "Last Name",
+                            "Middle Name",
+                            "Row Id",
+                            "Job Title",
+                            "Status",
+                            "Cellular Phone #",
+                            "Email Address",
+                            "Work Phone #",
+                            "First Name",
+                            "M/M",
+                            "Currency Code"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "Contact"
+                    ]
+                  },
+                  "ListOfCom Invoice Profile": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "properties": {
+                      "Com Invoice Profile": {
+                        "type": "array",
+                        "items": {
+                          "properties": {
+                            "External Billing Account Number": {
+                              "type": "string"
+                            },
+                            "Account Id": {
+                              "type": "string"
+                            },
+                            "Days To Cash": {
+                              "type": "string"
+                            },
+                            "Last Bill Date": {
+                              "type": "string"
+                            },
+                            "Bank Account Number": {
+                              "type": "string"
+                            },
+                            "Yearly Advance Payment Flag": {
+                              "type": "string"
+                            },
+                            "Bill Source": {
+                              "type": "string"
+                            },
+                            "Contact Id": {
+                              "type": "string"
+                            },
+                            "Status": {
+                              "type": "string"
+                            },
+                            "Bank Authorization flag": {
+                              "type": "string"
+                            },
+                            "Credit Card Number Encryptkey Reference": {
+                              "type": "string"
+                            },
+                            "Id": {
+                              "type": "string"
+                            },
+                            "Name": {
+                              "type": "string"
+                            },
+                            "Credit Card Name": {
+                              "type": "string"
+                            },
+                            "Budget Billing Flag": {
+                              "type": "string"
+                            },
+                            "Bill Frequency": {
+                              "type": "string"
+                            },
+                            "Bill Cycle": {
+                              "type": "string"
+                            },
+                            "Credit Card Block Reason": {
+                              "type": "string"
+                            },
+                            "Media Type": {
+                              "type": "string"
+                            },
+                            "Collections Flag": {
+                              "type": "string"
+                            },
+                            "CPNI Flag": {
+                              "type": "string"
+                            },
+                            "Credit Card Verification Number": {
+                              "type": "string"
+                            },
+                            "Bill Cycle Day": {
+                              "type": "string"
+                            },
+                            "Bill Type": {
+                              "type": "string"
+                            },
+                            "Reason for Manual Outsource": {
+                              "type": "string"
+                            },
+                            "Bill Sequence": {
+                              "type": "string"
+                            },
+                            "External Billing Account Number - Old": {
+                              "type": "string"
+                            },
+                            "Address Id": {
+                              "type": "string"
+                            },
+                            "Bank Account Type": {
+                              "type": "string"
+                            },
+                            "Payment Method": {
+                              "type": "string"
+                            },
+                            "Bank Language Id": {
+                              "type": "string"
+                            },
+                            "Last Bill Amount": {
+                              "type": "string"
+                            },
+                            "Interest at Invoice Flag": {
+                              "type": "string"
+                            },
+                            "Routing Number": {
+                              "type": "string"
+                            },
+                            "Repeat Debtor Flag": {
+                              "type": "string"
+                            },
+                            "Credit Card Security Code": {
+                              "type": "string"
+                            },
+                            "Bank Name": {
+                              "type": "string"
+                            },
+                            "Email Bill To": {
+                              "type": "string"
+                            },
+                            "Credit Card Category": {
+                              "type": "string"
+                            },
+                            "Bill Average": {
+                              "type": "string"
+                            },
+                            "Credit Card Expiration Calculated Date": {
+                              "type": "string"
+                            },
+                            "CPNI Date": {
+                              "type": "string"
+                            },
+                            "Extra Copies": {
+                              "type": "string"
+                            },
+                            "Bank Account Name": {
+                              "type": "string"
+                            },
+                            "No Pay Form Flag": {
+                              "type": "string"
+                            },
+                            "Standing Order Flag": {
+                              "type": "string"
+                            },
+                            "Bank Branch": {
+                              "type": "string"
+                            },
+                            "Bank Language Code": {
+                              "type": "string"
+                            },
+                            "Credit Card Block Flag": {
+                              "type": "string"
+                            },
+                            "Credit Card Type": {
+                              "type": "string"
+                            },
+                            "Credit Card Number": {
+                              "type": "string"
+                            },
+                            "Credit Card Verification Number Encryption Key": {
+                              "type": "string"
+                            },
+                            "Statement Flag": {
+                              "type": "string"
+                            },
+                            "Number of Manual Invoices": {
+                              "type": "string"
+                            },
+                            "Credit Card Expiration Year": {
+                              "type": "string"
+                            },
+                            "Bill Vendor Id": {
+                              "type": "string"
+                            },
+                            "Credit Card Expiration Month": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "Account Id",
+                            "Contact Id",
+                            "Status",
+                            "Id",
+                            "Name",
+                            "Bill Frequency",
+                            "Media Type",
+                            "Bill Type",
+                            "Address Id",
+                            "Payment Method"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "Com Invoice Profile"
+                    ]
+                  }
+                },
+                "required": [
+                  "Master Account Id",
+                  "Account Number",
+                  "Name",
+                  "Type",
+                  "Primary Billing Profile Id",
+                  "Parent Account Name",
+                  "Row Id",
+                  "Primary Address Id",
+                  "Integration Id",
+                  "Price List Id",
+                  "Parent Account Id",
+                  "Price List",
+                  "Primary Organization Id",
+                  "Primary Contact Id",
+                  "Account Status",
+                  "Account Type Code",
+                  "Created",
+                  "Main Phone Number",
+                  "Currency Code"
+                ]
+              }
+            },
+            "required": [
+              "Account"
+            ]
+          }
+        },
+        "required": [
+          "ListOfSWICustomerPartyIO"
+        ]
+      }
+    },
+    "required": [
+      "eventType",
+      "SiebelMessage"
+    ]
+  },
+  "global": [
+    "event_status",
+    "parentAccountId",
+    "parentAccountName",
+    "parentAccountPrimaryBillPrfId",
+    "correlationId"
+  ],
+  "output": {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "additionalProperties": true,
+    "properties": {
+      "publish_status": {
+        "type": "string"
+      },
+      "exception": {
+        "type": "object"
+      }
+    }
+  },
+  "steps": {
+    "get_parent_party_account": {
+      "type": "RESTOutbound",
+      "restSpec": "siebel-tmf-dbe",
+      "endPoint": "SWI Customer Party Service/QueryById",
+      "method": "POST",
+      "inputHeaders": {
+        "Content-Type": "application/json"
+      },
+      "queryParams": {
+        "matchrequestformat": "y"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/getCustomerPartyAccountForHierarchy-dt.jsonata"
+          }
+        ]
+      },
+      "retryConfig": {
+        "retryDelayMilliseconds": 50,
+        "retryBackoffMultiplier": 2.0,
+        "retryTotalTimeoutMilliseconds": 900,
+        "retryExcludeStatusCodes": [
+          404,
+          200
+        ]
+      },
+      "output": {
+        "global.parentAccountId": "${output.SiebelMessage.ListOfSWICustomerPartyIO.Account[0].'Account Number'}",
+        "global.parentAccountName": "${output.SiebelMessage.ListOfSWICustomerPartyIO.Account[0].'Name'}",
+        "global.parentAccountPrimaryBillPrfId": "${output.SiebelMessage.ListOfSWICustomerPartyIO.Account[0].'Primary Billing Profile Id'}"
+      }
+    },
+    "brm_event_publish": {
+      "type": "EventPublish",
+      "queue": "brm-event-publish",
+      "inputHeaders": {
+        "correlation-id": "${input.correlationId}",
+        "account-id": "${WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account.'Account Number' ?: ''}"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput",
+            "transformationSpec": "partyAccount/sblPartyAccountToTmf666.jsonata"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/sblPartyAccountToTmf666-FinalScript.jsonata"
+          }
+        ]
+      },
+      "output": {
+        "global.event_status": "${publish_status}"
+      }
+    },
+    "brm_event_publish_with_hierarchy": {
+      "type": "EventPublish",
+      "queue": "brm-event-publish",
+      "inputHeaders": {
+        "correlation-id": "${input.correlationId}",
+        "account-id": "${WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account.'Account Number' ?: ''}"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/sblPartyAccountToTmf666ForHierarchy.jsonata"
+          }
+        ]
+      },
+      "output": {
+        "global.event_status": "${publish_status}"
+      }
+    }
+  },
+  "response": {
+    "success": {
+      "payload": {
+        "dataCollection": [
+          {
+            "source": "brm_event_publish"
+          },
+          {
+            "source": "brm_event_publish_with_hierarchy"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/MatchRequest_brm_event_publish.jsonata"
+          }
+        ]
+      },
+      "statusCode": "${global.event_status == true ? 200 : 500}",
+      "headers": {
+        "X-Flow-Result": "success"
+      }
+    },
+    "error": {
+      "payload": {
+        "dataCollection": [
+          {
+            "source": "brm_event_publish"
+          },
+          {
+            "source": "brm_event_publish_with_hierarchy"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/MatchRequest_brm_event_publish.jsonata"
+          }
+        ]
+      },
+      "statusCode": "${global.event_status == true ? 200 : 500}",
+      "headers": {
+        "X-Flow-Result": "error"
+      }
+    }
+  },
+  "transitions": {
+    "$start": {
+      "transitions": [
+        {
+          "condition": "${var parentAccountId = WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account.'Parent Account Id' ?: ''; parentAccountId == ''}",
+          "target": "brm_event_publish"
+        },
+        {
+          "condition": "${var parentAccountId = WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account.'Parent Account Id' ?: ''; parentAccountId != ''}",
+          "target": "get_parent_party_account"
+        }
+      ]
+    },
+    "get_parent_party_account": {
+      "transitions": [
+        {
+          "condition": "${global.parentAccountId != ''}",
+          "target": "brm_event_publish_with_hierarchy"
+        },
+        {
+          "condition": "${global.parentAccountId == ''}",
+          "target": "$errorEnd"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    },
+    "brm_event_publish": {
+      "transitions": [
+        {
+          "condition": "${global.event_status == true}",
+          "target": "$end"
+        },
+        {
+          "condition": "${global.event_status == false}",
+          "target": "$errorEnd"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    },
+    "brm_event_publish_with_hierarchy": {
+      "transitions": [
+        {
+          "condition": "${global.event_status == true}",
+          "target": "$end"
+        },
+        {
+          "condition": "${global.event_status == false}",
+          "target": "$errorEnd"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,224 @@
+{
+  "input": {
+    "type": "object"
+  },
+  "global": [
+    "event_status",
+    "correlationId"
+  ],
+  "output": {
+    "type": "object"
+  },
+  "steps": {
+    "OSM_CALL_REVISE": {
+      "type": "EventPublish",
+      "queue": "osm-event-publish",
+      "storeInputToGlobal": {
+        "global.correlationId": "${var orderData=WorkflowInput.SiebelMessage.ListOfSWIOrderIO.SWIOrder; var order=orderData != null && orderData.size() > 0 ? (orderData[0] ?: orderData) : null; var orderNum=order != null ? order.\"Order Number\" : null; var time=currentTimeMillis; orderNum != null ? (time != null ? orderNum + \"_\" + time : orderNum) : (time != null ? time : \"cor-uid\")}"
+      },
+      "partitionKey": "${global.correlationId}",
+      "inputHeaders": {
+        "correlation-id": "${global.correlationId}",
+        "command-type": "reviseProductOrder",
+        "spec-version": "v4.0.0.4.0",
+        "X-VERSION": "1"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput",
+            "transformationSpec": "INTERIM_SCRIPT_ROOT_WITH_ROLLUP.json"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "FinalScript.json"
+          }
+        ]
+      },
+      "output": {
+        "global.event_status": "${publish_status}"
+      }
+    },
+    "OSM_CALL_CANCEL": {
+      "type": "EventPublish",
+      "queue": "osm-event-publish",
+      "storeInputToGlobal": {
+        "global.correlationId": "${var orderData=WorkflowInput.SiebelMessage.ListOfSWIOrderIO.SWIOrder; var order=orderData != null && orderData.size() > 0 ? (orderData[0] ?: orderData) : null; var orderNum=order != null ? order.\"Order Number\" : null; var time=currentTimeMillis; orderNum != null ? (time != null ? orderNum + \"_\" + time : orderNum) : (time != null ? time : \"cor-uid\")}"
+      },
+      "partitionKey": "${global.correlationId}",
+      "inputHeaders": {
+        "correlation-id": "${global.correlationId}",
+        "command-type": "cancelProductOrder",
+        "spec-version": "v4.0.0.4.0",
+        "X-VERSION": "1"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput",
+            "transformationSpec": "INTERIM_SCRIPT_CANCEL_ORDER.json"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "FinalScript.json"
+          }
+        ]
+      },
+      "output": {
+        "global.event_status": "${publish_status}"
+      }
+    },
+    "OSM_CALL_KAFKA": {
+      "type": "EventPublish",
+      "queue": "osm-event-publish",
+      "storeInputToGlobal": {
+        "global.correlationId": "${var orderData=WorkflowInput.SiebelMessage.ListOfSWIOrderIO.SWIOrder; var order=orderData != null && orderData.size() > 0 ? (orderData[0] ?: orderData) : null; var orderNum=order != null ? order.\"Order Number\" : null; var time=currentTimeMillis; orderNum != null ? (time != null ? orderNum + \"_\" + time : orderNum) : (time != null ? time : \"cor-uid\")}"
+      },
+      "partitionKey": "${global.correlationId}",
+      "inputHeaders": {
+        "correlation-id": "${global.correlationId}",
+        "command-type": "createProductOrder",
+        "spec-version": "v4.0.0.4.0"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput",
+            "transformationSpec": "INTERIM_SCRIPT_ROOT_WITH_ROLLUP.json"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "FinalScript.json"
+          }
+        ]
+      },
+      "output": {
+        "global.event_status": "${publish_status}"
+      }
+    },
+    "Siebel_Error_State": {
+      "type": "RESTOutbound",
+      "restSpec": "siebel-tmf-dbe",
+      "endPoint": "Workflow Process Manager/RunProcess",
+      "method": "POST",
+      "inputHeaders": {
+        "Content-Type": "application/json"
+      },
+      "queryParams": {
+        "matchrequestformat": "y"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "POSiebelErrorState.json"
+          }
+        ]
+      },
+      "output": {
+      }
+    }
+  },
+  "response": {
+    "success": {
+      "payload": {
+        "dataCollection": [
+          {
+            "source": "OSM_CALL_CANCEL"
+          },
+          {
+            "source": "OSM_CALL_REVISE"
+          },
+          {
+            "source": "OSM_CALL_KAFKA"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "MatchRequest_OSM_KAFKA.json"
+          }
+        ]
+      },
+      "statusCode": 200
+    },
+    "error": {
+      "payload": {
+        "dataCollection": [
+          {
+            "source": "Siebel_Error_State"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "MatchRequest-POSubmitErrorState.json"
+          }
+        ]
+      },
+      "statusCode": 500
+    }
+  },
+  "transitions": {
+    "$start": {
+      "transitions": [
+        {
+          "condition": "${var orderData=WorkflowInput.SiebelMessage.ListOfSWIOrderIO.SWIOrder; var order=orderData != null && orderData.size() > 0 ? (orderData[0] ?: orderData) : null; order != null && order.\"Fulfillment Mode\" == \"Cancel\"}",
+          "target": "OSM_CALL_CANCEL"
+        },
+        {
+          "condition": "${var orderData=WorkflowInput.SiebelMessage.ListOfSWIOrderIO.SWIOrder; var order=orderData != null && orderData.size() > 0 ? (orderData[0] ?: orderData) : null; var revision=order != null && order.Revision != null && order.Revision != \"\" ? order.Revision : 1; revision > 1}",
+          "target": "OSM_CALL_REVISE"
+        },
+        {
+          "target": "OSM_CALL_KAFKA"
+        }
+      ]
+    },
+    "OSM_CALL_CANCEL": {
+      "transitions": [
+        {
+          "condition": "${global.event_status == false}",
+          "target": "Siebel_Error_State"
+        },
+        {
+          "target": "$end"
+        }
+      ]
+    },
+    "OSM_CALL_REVISE": {
+      "transitions": [
+        {
+          "condition": "${global.event_status == false}",
+          "target": "Siebel_Error_State"
+        },
+        {
+          "target": "$end"
+        }
+      ]
+    },
+    "OSM_CALL_KAFKA": {
+      "transitions": [
+        {
+          "condition": "${global.event_status == false}",
+          "target": "Siebel_Error_State"
+        },
+        {
+          "target": "$end"
+        }
+      ]
+    },
+    "Siebel_Error_State": {
+      "transitions": [
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    }
+  }
+}

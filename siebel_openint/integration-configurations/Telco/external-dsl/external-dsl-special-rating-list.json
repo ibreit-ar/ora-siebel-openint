@@ -1,0 +1,298 @@
+{
+  "input": {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "additionalProperties": true,
+    "properties": {
+      "SiebelMessage": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "IntObjectName": {
+            "type": "string"
+          },
+          "IntObjectFormat": {
+            "type": "string"
+          },
+          "ListOfSWISpecialRatingListIO": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "SWI Special Rating List": {
+                "type": "object",
+                "additionalProperties": true,
+                "properties": {
+                  "Special Rating List Id": {
+                    "type": "string"
+                  },
+                  "ListOfSWI Special Rating List Items": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "properties": {
+                      "SWI Special Rating List Items": {
+                        "type": "array",
+                        "items": {
+                          "properties": {
+                            "Last Synchronized Date": {
+                              "type": "string"
+                            },
+                            "Special Rating List Item": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "Last Synchronized Date",
+                            "Special Rating List Item"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "SWI Special Rating List Items"
+                    ]
+                  },
+                  "Last Synchronized Date": {
+                    "type": "string"
+                  },
+                  "ListOfSWI Asset": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "properties": {
+                      "SWI Asset": {
+                        "type": "array",
+                        "items": {
+                          "properties": {
+                            "Special Rating Max Items": {
+                              "type": "integer"
+                            },
+                            "Asset Integration Id": {
+                              "type": "string"
+                            },
+                            "Parent Asset Integration Id": {
+                              "type": "string"
+                            },
+                            "Parent Asset Service Account Id": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "Special Rating Max Items",
+                            "Asset Integration Id"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "SWI Asset"
+                    ]
+                  }
+                },
+                "required": [
+                  "Special Rating List Id",
+                  "ListOfSWI Special Rating List Items",
+                  "ListOfSWI Asset"
+                ]
+              }
+            },
+            "required": [
+              "SWI Special Rating List"
+            ]
+          },
+          "MessageType": {
+            "type": "string"
+          },
+          "MessageId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ListOfSWISpecialRatingListIO"
+        ]
+      }
+    },
+    "required": [
+      "SiebelMessage"
+    ]
+  },
+  "global": [
+    "event_status",
+    "accountAssetsStatus",
+    "actualWorkflowInput"
+  ],
+  "output": {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "additionalProperties": true,
+    "properties": {
+      "publish_status": {
+        "type": "string"
+      },
+      "exception": {
+        "type": "object"
+      }
+    }
+  },
+  "steps": {
+    "get_account_assets": {
+      "type": "RESTOutbound",
+      "restSpec": "siebel-data-tmf-dbe",
+      "endPoint": "Account/Account/{AccountId}/Asset Mgmt - Asset",
+      "method": "GET",
+      "pathParams": {
+        "AccountId": "${WorkflowInput.SiebelMessage.ListOfSWISpecialRatingListIO.'SWI Special Rating List'.'Account Id'}"
+      },
+      "inputHeaders": {
+        "Content-Type": "application/json"
+      },
+      "queryParams": {
+        "fields": "Id,Product Name,Integration Id,Asset Description,Product Description,Name"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "specialRatingList/getAccountAsset-dt.jsonata"
+          }
+        ]
+      },
+      "storeInputToGlobal": {
+        "global.actualWorkflowInput": "${WorkflowInput}"
+      },
+      "retryConfig": {
+        "retryDelayMilliseconds": 50,
+        "retryBackoffMultiplier": 2.0,
+        "retryTotalTimeoutMilliseconds": 900,
+        "retryExcludeStatusCodes": [
+          404,
+          200
+        ]
+      },
+      "output": {
+        "global.accountAssetsStatus": "${status}"
+      }
+    },
+    "srl_event_publish": {
+      "type": "EventPublish",
+      "queue": "srl-event-publish",
+      "inputHeaders": {
+        "correlation-id": "${input.correlationId ?: ''}"
+      },
+      "retryConfig": {
+        "retryMaxAttempts": 3,
+        "retryDelayMilliseconds": 5000,
+        "retryBackoffMultiplier": 1.0,
+        "retryMaxDelayMilliseconds": 20000,
+        "retryTotalTimeoutMilliseconds": 200000
+      },
+      "loop": {
+        "source": "${WorkflowInput.SiebelMessage.ListOfSWISpecialRatingListIO.'SWI Special Rating List'.'ListOfSWI Asset'['SWI Asset']}",
+        "collectOutputs": true,
+        "executionMode": "parallel",
+        "maxDurationMs": 300000
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          },
+          {
+            "source": "get_account_assets",
+            "transformationSpec": "specialRatingList/flattenAccountAssets.jsonata"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "specialRatingList/filterSRListAssetByIntegrationId.jsonata"
+          },
+          {
+            "transformationSpec": "specialRatingList/sblSRListToTmfTransform.jsonata"
+          }
+        ]
+      },
+      "output": {
+        "global.event_status": "${publish_status}"
+      }
+    }
+  },
+  "response": {
+    "success": {
+      "payload": {
+        "dataCollection": [
+          {
+            "source": "srl_event_publish"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "specialRatingList/responseTransform.jsonata"
+          }
+        ]
+      },
+      "statusCode": "200",
+      "headers": {
+        "X-Flow-Result": "success"
+      }
+    },
+    "error": {
+      "payload": {
+        "dataCollection": [
+          {
+            "source": "srl_event_publish"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "specialRatingList/responseTransform.jsonata"
+          }
+        ]
+      },
+      "statusCode": "500",
+      "headers": {
+        "X-Flow-Result": "error"
+      }
+    }
+  },
+  "transitions": {
+    "$start": {
+      "transitions": [
+        {
+          "target": "get_account_assets"
+        }
+      ]
+    },
+    "get_account_assets": {
+      "transitions": [
+        {
+          "condition": "${global.accountAssetsStatus == 200}",
+          "target": "srl_event_publish"
+        },
+        {
+          "condition": "${global.accountAssetsStatus != 200}",
+          "target": "$errorEnd"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    },
+    "srl_event_publish": {
+      "transitions": [
+        {
+          "condition": "${srl_event_publish.failureCount < 1}",
+          "target": "$end"
+        },
+        {
+          "condition": "${srl_event_publish.failureCount > 0}",
+          "target": "$errorEnd"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    }
+  }
+}

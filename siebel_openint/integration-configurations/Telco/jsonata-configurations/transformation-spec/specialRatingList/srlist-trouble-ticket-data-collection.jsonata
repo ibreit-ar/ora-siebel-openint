@@ -1,0 +1,26 @@
+(
+	$errorMessage := WorkflowInput.error;
+
+	{
+	  "SiebelMessage": {
+	    "IntObjectFormat": "Siebel Hierarchical",
+	    "IntObjectName": "SWITroubleTicketIO",
+	    "MessageType": "Integration Object",
+	    "ListOfSWITroubleTicketIO": {
+	      "Trouble Ticket": [
+	        {
+	          "Abstract": $substring("SRList NOT synced to BRM. " &
+                $errorMessage.code &
+                " | " & $errorMessage.message &
+                " | " & $errorMessage.type &
+                " | " & $errorMessage.status , 0, 100),
+	          "Id": "1-234",
+	          "Account Id": WorkflowInput.payload.accountId,
+	          "Status": "Open",
+	          "Severity": "4-Low"
+	        }
+	      ]
+	    }
+	  }
+	}
+)

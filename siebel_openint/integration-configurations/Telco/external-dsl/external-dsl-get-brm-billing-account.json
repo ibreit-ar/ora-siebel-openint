@@ -1,0 +1,417 @@
+{
+  "input": {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id"
+    ]
+  },
+  "global": [
+    "rest_status"
+  ],
+  "output": {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "properties": {
+      "vatCertificate": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "@type": {
+        "type": "string"
+      },
+      "billStructure": {
+        "type": "object",
+        "properties": {
+          "payType": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "businessProfileId": {
+            "type": "string"
+          },
+          "actgType": {
+            "type": "string"
+          },
+          "billingSegment": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "@type": {
+            "type": "string"
+          },
+          "format": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "href": {
+                "type": "string"
+              },
+              "@type": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "id",
+              "href",
+              "@type"
+            ]
+          },
+          "acctSuppressed": {
+            "type": "boolean"
+          },
+          "cycleSpecification": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "href": {
+                "type": "string"
+              },
+              "@type": {
+                "type": "string"
+              },
+              "billingDateShift": {
+                "type": "integer"
+              },
+              "frequency": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "id",
+              "href",
+              "@type",
+              "billingDateShift",
+              "frequency"
+            ]
+          },
+          "balanceGroup": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "isDefault": {
+                  "type": "boolean"
+                },
+                "services": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id"
+                    ]
+                  }
+                },
+                "limit": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "unit": {
+                        "type": "string"
+                      },
+                      "dynamicCreditFloor": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "unit",
+                      "dynamicCreditFloor"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "isDefault",
+                "services",
+                "limit"
+              ]
+            }
+          },
+          "presentationMedia": {
+            "type": "array",
+            "items": {
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "href": {
+                  "type": "string"
+                },
+                "@type": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name",
+                "id",
+                "href",
+                "@type"
+              ]
+            }
+          }
+        },
+        "required": [
+          "payType",
+          "name",
+          "businessProfileId",
+          "actgType",
+          "billingSegment",
+          "id",
+          "@type",
+          "format",
+          "acctSuppressed",
+          "cycleSpecification",
+          "balanceGroup",
+          "presentationMedia"
+        ]
+      },
+      "glSegment": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "accountType": {
+        "type": "string"
+      },
+      "state": {
+        "type": "string"
+      },
+      "relatedParty": {
+        "type": "array",
+        "items": {
+          "properties": {
+            "partyOrPartyRole": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "partyName": {
+                  "type": "string"
+                },
+                "partyId": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "partyName",
+                "partyId"
+              ]
+            },
+            "@type": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "partyOrPartyRole",
+            "@type",
+            "role"
+          ]
+        }
+      },
+      "id": {
+        "type": "string"
+      },
+      "href": {
+        "type": "string"
+      },
+      "lastUpdate": {
+        "type": "string"
+      },
+      "brmAccountType": {
+        "type": "string"
+      },
+      "currencySecondary": {
+        "type": "string"
+      },
+      "attribute": {
+        "type": "integer"
+      },
+      "accountNum": {
+        "type": "string"
+      },
+      "contact": {
+        "type": "object"
+      },
+      "customerSegmentList": {
+        "type": "string"
+      },
+      "locale": {
+        "type": "string"
+      },
+      "currency": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "vatCertificate",
+      "name",
+      "@type",
+      "billStructure",
+      "glSegment",
+      "description",
+      "accountType",
+      "state",
+      "relatedParty",
+      "id",
+      "href",
+      "lastUpdate",
+      "brmAccountType",
+      "currencySecondary",
+      "attribute",
+      "accountNum",
+      "contact",
+      "customerSegmentList",
+      "locale",
+      "currency"
+    ]
+  },
+  "steps": {
+    "get_brm_billing_account": {
+      "type": "RESTOutbound",
+      "restSpec": "brm-tmf-dbe",
+      "endPoint": "/brm/accountManagement/v5/billingAccount/{billing-account-id}",
+      "method": "GET",
+      "pathParams": {
+        "billing-account-id": "${WorkflowInput.id}"
+      },
+      "inputHeaders": {
+        "Content-Type": "application/json"
+      },
+      "queryParams": {
+        "id": "${WorkflowInput.id}"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/getBRMBillingAccount-dt.jsonata"
+          }
+        ]
+      },
+      "retryConfig": {
+        "retryDelayMilliseconds": 50,
+        "retryBackoffMultiplier": 2.0,
+        "retryTotalTimeoutMilliseconds": 900,
+        "retryExcludeStatusCodes": [
+          404,
+          200
+        ]
+      },
+      "output": {
+        "global.rest_status": "${status}"
+      }
+    }
+  },
+  "response": {
+    "success": {
+      "payload": {
+        "dataCollection": [
+          {
+            "source": "get_brm_billing_account"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/getBRMBillingAccount-rsp.jsonata"
+          }
+        ]
+      },
+      "statusCode": "${global.rest_status == '200' ? 200 : 500}",
+      "headers": {
+        "X-Flow-Result": "success"
+      }
+    },
+    "error": {
+      "payload": {
+        "dataCollection": [
+          {
+            "source": "get_brm_billing_account"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/getBRMBillingAccount-rsp.jsonata"
+          }
+        ]
+      },
+      "statusCode": "${global.rest_status == '200' ? 200 : 500}",
+      "headers": {
+        "X-Flow-Result": "success"
+      }
+    }
+  },
+  "transitions": {
+    "$start": {
+      "transitions": [
+        {
+          "target": "get_brm_billing_account"
+        }
+      ]
+    },
+    "get_brm_billing_account": {
+      "transitions": [
+        {
+          "condition": "${global.rest_status == '200'}",
+          "target": "$end"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    }
+  }
+}

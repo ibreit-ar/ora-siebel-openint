@@ -1,0 +1,27 @@
+(
+  $targetAssetIntegrationId := WorkflowInput."Asset Integration Id";
+  $actualWorkflowInput := global.actualWorkflowInput;
+
+  $specialRatingList :=
+    $actualWorkflowInput
+      .SiebelMessage
+      .ListOfSWISpecialRatingListIO
+      ."SWI Special Rating List";
+
+  $matchingAssets := $filter(
+    $specialRatingList."ListOfSWI Asset"."SWI Asset",
+    function($asset) {
+      $asset."Asset Integration Id" = $targetAssetIntegrationId
+    }
+  );
+
+  {
+    "WorkflowInput": $actualWorkflowInput ~> |
+      SiebelMessage.ListOfSWISpecialRatingListIO."SWI Special Rating List"."ListOfSWI Asset"
+    | {
+      "SWI Asset": [$matchingAssets]
+    } |,
+    "get_account_assets": get_account_assets,
+    "global": global
+  }
+)

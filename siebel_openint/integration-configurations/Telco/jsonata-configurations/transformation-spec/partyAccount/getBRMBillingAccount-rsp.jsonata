@@ -1,0 +1,1 @@
+($exists($."get_brm_billing_account") ? $.get_brm_billing_account : $.global)
