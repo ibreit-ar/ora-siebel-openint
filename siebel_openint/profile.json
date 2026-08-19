@@ -112,7 +112,7 @@
           "UserSpec": "X-Siebel-User",
           "TrustToken": "Guest22__Aa",
           "SingleSignOn": true,
-          "AnonUserName": "GUESTCST",
+          "AnonUserName": "SADMIN",
           "SessionTimeout": 300,
           "GuestSessionTimeout": 300
         }
@@ -126,7 +126,7 @@
           "UserSpec": "X-Siebel-User",
           "TrustToken": "Guest22__Aa",
           "SingleSignOn": true,
-          "AnonUserName": "GUESTCST",
+          "AnonUserName": "SADMIN",
           "SessionTimeout": 300,
           "GuestSessionTimeout": 300
         }
