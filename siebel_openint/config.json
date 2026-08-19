@@ -12,14 +12,9 @@
   "eps": {
     "SecureAIToKafkaCommunication": "false",
     "KafkaServers": "kafka-oi.kafka-oi.svc.cluster.local:9092",
-    "KafkaAuthenticationEnabled": "true",
-    "KafkaAuthenticationMechanism": "SCRAM-SHA-512",
-    "KafkaAuthenticationUser": "siebel-user",
-    "KafkaAuthenticationPassword": "Siebel2026!Seguro",
     "aieventconfig": {
       "ConfigParam": {
         "NumberOfProducers": "1",
-        "DLQMessagesMaxLimit": "500",
         "SynchronousKafkaProduce": true,
         "KafkaProducerMaxRequestSize": "20971520",
         "KafkaTopicConsumerFetchMaxBytes": "20971530",
