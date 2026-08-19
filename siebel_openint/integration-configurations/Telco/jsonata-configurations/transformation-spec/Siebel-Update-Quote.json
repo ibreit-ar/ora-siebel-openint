@@ -1,0 +1,19 @@
+{
+  "SiebelMessage": {
+    "MessageId": WorkflowInput.SiebelMessageIn.MessageId,
+    "MessageType": WorkflowInput.SiebelMessageIn.MessageType,
+    "IntObjectName": WorkflowInput.SiebelMessageIn.IntObjectName,
+    "IntObjectFormat": WorkflowInput.SiebelMessageIn.IntObjectFormat,
+    "ListOfOrder Interface": {
+      "Orders": $map(
+      WorkflowInput.SiebelMessageIn["ListOfOrder Interface"].Orders,
+function($o) {
+$merge([
+$o,
+{"Status": "Active"}
+])
+}
+)
+}
+}
+}

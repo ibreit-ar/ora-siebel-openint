@@ -1,0 +1,136 @@
+{
+  "input": {
+    "type": "object"
+  },
+  "global": [
+    "rest_status",
+    "order_status",
+    "tt_id"
+  ],
+  "output": {
+    "type": "object"
+  },
+  "steps": {
+    "SIEBEL_CALL": {
+      "type": "RESTOutbound",
+      "restSpec": "siebel-tmf-dbe",
+      "endPoint": "Workflow Process Manager/RunProcess",
+      "method": "POST",
+      "inputheader": {
+        "Content-Type": "application/json"
+      },
+      "queryparams": {
+        "matchrequestformat": "y"
+      },
+      "inputspecifcation": {
+        "datacollection": [
+          {
+            "source": "WorkflowInput",
+            "transform-spec": "POStateChangeTmfToSiebelMessage.json"
+          }
+        ],
+        "transformation": [
+          {
+            "transform-spec": "POStateChangeTmfToSiebelMessage-FinalScript.json"
+          }
+        ]
+      },
+      "output": {
+        "global.rest_status": "${status}",
+        "global.order_status": "${output.SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Status'}"
+      }
+    },
+    "Trouble_Ticket": {
+      "type": "RESTOutbound",
+      "restSpec": "siebel-tmf-dbe",
+      "endPoint": "SWI Trouble Ticket Service/Insert",
+      "method": "POST",
+      "inputheader": {
+        "Content-Type": "application/json"
+      },
+      "queryparams": {
+        "matchrequestformat": "y"
+      },
+      "inputspecifcation": {
+        "datacollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transform-spec": "state-change-trouble-ticket-data-collection.json"
+          }
+        ]
+      },
+      "output": {
+        "global.tt_id": "${output.SiebelMessage.ListOfSWITroubleTicketIO.'Trouble Ticket'[0].Id}"
+      }
+    }
+  },
+  "response": {
+    "success": {
+      "datacollection": [
+        {
+          "source": "SIEBEL_CALL"
+        }
+      ],
+      "transformation": [
+        {
+          "transform-spec": "MatchRequest-POStateChangeTmfToSiebelMessage.json"
+        }
+      ]
+    },
+    "error": {
+      "datacollection": [
+        {
+          "source": "Trouble_Ticket"
+        }
+      ],
+      "transformation": [
+        {
+          "transform-spec": "MatchRequest-POStateChange_Trouble_Ticket.json"
+        }
+      ]
+    }
+  },
+  "transitions": {
+    "$start": {
+      "transitions": [
+        {
+          "target": "SIEBEL_CALL"
+        }
+      ]
+    },
+    "SIEBEL_CALL": {
+      "transitions": [
+        {
+          "condition": "${global.rest_status != '200'}",
+          "target": "$errorEnd"
+        },
+        {
+          "condition": "${global.order_status != null && global.order_status != \"Failed\"}",
+          "target": "$end"
+        },
+        {
+          "condition": "${global.order_status == \"Failed\"}",
+          "target": "Trouble_Ticket"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    },
+    "Trouble_Ticket": {
+      "transitions": [
+        {
+          "condition": "${global.tt_id != null && global.tt_id != ''}",
+          "target": "$end"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "apigen": {
+    "language": "en",
+    "externalREST": {
+      "siebel-tmf-dbe": {
+        "baseURL": "https://10.1.4.249/siebel/v1.0/service",
+        "authentication": {
+          "basic": {
+            "username": "sadmin",
+            "password": "ldap"
+          }
+        }
+      },
+      "siebel-data-tmf-dbe": {
+        "baseURL": "https://10.1.4.249/siebel/v1.0/data",
+        "authentication": {
+          "basic": {
+            "username": "sadmin",
+            "password": "ldap"
+          }
+        }
+      },
+      "brm-tmf-dbe": {
+        "baseURL": "http://phoenix619713.appsdev.fusionappsdphx1.oraclevcn.com:8082/castlemock/mock/rest/project/TrS627/application/zUW6Oo",
+        "authentication": {
+          "basic": {
+            "username": "admin",
+            "password": "admin"
+          }
+        }
+      }
+    },
+    "outboundEvents": {
+      "brm-event-publish": {
+        "topic": "partyAccountEvent"
+      },
+      "srl-event-publish": {
+        "topic": "productEvent"
+      },
+      "osm-event-publish": {
+        "topic": "productOrder-command-request"
+      }
+    },
+    "integrations": {
+      "openintegration/v1.0/integration/partyAccount": {
+        "externalDsl": "external-dsl-party-account.json"
+      },
+      "openintegration/v1.0/integration/partyAccountAttrValueChange": {
+        "externalDsl": "external-dsl-party-account-update.json"
+      },
+      "openintegration/v1.0/integration/SubmitOrder": {
+        "externalDsl": "external-dsl-submit-order.json"
+      },
+      "openintegration/v1.0/integration/ProductOrderOSMEventConsume": {
+        "resources": {
+          "inboundEventRegistration": {
+            "topic": "productOrderEvent",
+            "partitions": [
+              0
+            ],
+            "integrationUser": "sadmin"
+          }
+        },
+        "externalDsl": "external-dsl-osm-event.json"
+      },
+      "openintegration/v1.0/integration/ProductOrderCommandResponseConsumer": {
+        "resources": {
+          "inboundEventRegistration": {
+            "topic": "productOrder-command-response",
+            "partitions": [
+              0
+            ],
+            "integrationUser": "sadmin"
+          }
+        },
+        "externalDsl": "external-dsl-osm-command-response.json"
+      },
+      "openintegration/v1.0/integration/AccountSyncEventConsumer": {
+        "resources": {
+          "inboundEventRegistration": {
+            "topic": "partyAccountErrorEvent",
+            "partitions": [
+              0
+            ],
+            "integrationUser": "sadmin"
+          }
+        },
+        "externalDsl": "external-dsl-account-failure-topic-event.json"
+      },
+      "openintegration/v1.0/integration/ProductSyncEventConsumer": {
+        "resources": {
+          "inboundEventRegistration": {
+            "topic": "productErrorEvent",
+            "partitions": [
+              0
+            ],
+            "integrationUser": "sadmin"
+          }
+        },
+        "externalDsl": "external-dsl-product-failure-topic-event.json"
+      },
+      "openintegration/v1.0/integration/getBillingAccount": {
+        "externalDsl": "external-dsl-get-brm-billing-account.json"
+      },
+      "openintegration/v1.0/integration/specialRatingList": {
+        "externalDsl": "external-dsl-special-rating-list.json"
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+(
+  $publishResult :=
+    $exists($."srl_event_publish") ? $.srl_event_publish;
+
+  $hasFailure := $exists($publishResult.failureCount) and $publishResult.failureCount > 0;
+
+  {
+    "publish_status": $hasFailure ? false :
+      $exists($publishResult.publish_status) ? $publishResult.publish_status :
+      $exists($publishResult.lastOutput.publish_status) ? $publishResult.lastOutput.publish_status :
+      $exists($."exception") ? false,
+    "exception": $hasFailure ? $publishResult.outputs :
+      $exists($."exception") ? $.exception
+  }
+)

@@ -1,0 +1,23 @@
+(
+  $publishResult :=
+    $exists($."brm_event_publish") ? $.brm_event_publish :
+    $exists($."brm_event_publish_with_hierarchy") ? $.brm_event_publish_with_hierarchy :
+    $exists($."brm_event_publish_SWICustomerPartyIO") ? $.brm_event_publish_SWICustomerPartyIO :
+    $exists($."brm_event_publish_SWIContactIO") ? $.brm_event_publish_SWIContactIO :
+    $exists($."brm_event_publish_SWIBillingProfileIO") ? $.brm_event_publish_SWIBillingProfileIO :
+    $exists($."brm_event_publish_SWIAddressIO") ? $.brm_event_publish_SWIAddressIO :
+    $exists($."brm_event_publish_SWIAccountContactIO") ? $.brm_event_publish_SWIAccountContactIO :
+    $exists($."brm_event_publish_SWIAccountAddressIO") ? $.brm_event_publish_SWIAccountAddressIO :
+    $exists($."brm_event_publish_SWIAccountHierarchyIO") ? $.brm_event_publish_SWIAccountHierarchyIO;
+
+  $hasFailure := $exists($publishResult.failureCount) and $publishResult.failureCount > 0;
+
+  {
+    "publish_status": $hasFailure ? false :
+      $exists($publishResult.publish_status) ? $publishResult.publish_status :
+      $exists($publishResult.lastOutput.publish_status) ? $publishResult.lastOutput.publish_status :
+      $exists($."exception") ? false,
+    "exception": $hasFailure ? $publishResult.outputs :
+      $exists($."exception") ? $.exception
+  }
+)

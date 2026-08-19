@@ -1,0 +1,17 @@
+(
+    {
+        "SiebelMessage": {
+            "MessageType": "Integration Object",
+            "IntObjectName": "SWICustomerPartyIO",
+            "IntObjectFormat": "Siebel Hierarchical",
+            "ListOfSWICustomerPartyIO": {
+                "Account": {
+                    "Account Status": "External System Failure",
+                    "Name": WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account.Name,
+                    "Account Number": WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account.`Account Number`,
+                    "Row Id": WorkflowInput.SiebelMessage.ListOfSWICustomerPartyIO.Account.`Row Id`
+                }
+            }
+        }
+    }
+)

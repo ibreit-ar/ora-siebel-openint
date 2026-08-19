@@ -1,0 +1,77 @@
+(
+  $eventTime := $string($now());
+  $eventType := "AttributeValueChange";
+  $title := "Product" & $uppercase($substring($eventType, 0, 1)) & $substring($eventType, 1) & "Event";
+  $ratingList := WorkflowInput.SiebelMessage.ListOfSWISpecialRatingListIO."SWI Special Rating List";
+  $items := $ratingList."ListOfSWI Special Rating List Items"."SWI Special Rating List Items";
+  $asset := $ratingList."ListOfSWI Asset"."SWI Asset"[0];
+  $matchedAccountAsset := get_account_assets.assets[`Integration Id` = $asset.`Asset Integration Id`][0];
+
+  $productEventBody := (
+    {
+      "@type": "Product",
+      "id": $asset."Asset Integration Id",
+      "specialRatingProfile": {
+        "id": $ratingList."Special Rating List Id",
+        "@baseType": "ProfileExtRating",
+        "@type": "SpecialRatingProfile",
+        "name": $matchedAccountAsset."Product Name",
+        "label": $matchedAccountAsset."Product Description",
+        "data": [
+          $items#$i.{
+            "name": "Special Rating List Item",
+            "value": $."Special Rating List Item",
+            "validFor": {
+              "startDateTime": $."Last Synchronized Date"
+            }
+          }
+        ]
+      }
+    }
+  );
+
+  /* final body - start */
+  {
+    "eventId": (
+      $hex := "0123456789abcdef";
+      $pick := function() {
+        $substring($hex, $floor($random() * 16), 1)
+      };
+      $lowercase(
+        $pick()&$pick()&$pick()&$pick()&$pick()&$pick()&$pick()&$pick() & "-" &
+        $pick()&$pick()&$pick()&$pick() & "-" &
+        $pick()&$pick()&$pick()&$pick() & "-" &
+        $pick()&$pick()&$pick()&$pick() & "-" &
+        $pick()&$pick()&$pick()&$pick()&
+        $pick()&$pick()&$pick()&$pick()&
+        $pick()&$pick()&$pick()&$pick()
+      )
+    ),
+    "eventTime": $eventTime,
+    "eventType": $title,
+    "correlationId": ($exists($asset."Asset Integration Id") and $asset."Asset Integration Id" != "" ? $asset."Asset Integration Id" & "_" : "") & $string($millis()),
+    "domain": "commercial",
+    "title": $title,
+    "description": $title,
+    "priority": "3",
+    "timeOcurred": $eventTime,
+    "@baseType": "Event",
+    "@type": "Event",
+    "event": {
+      "product": $productEventBody
+    },
+    "reportingSystem": {
+      "id": "-",
+      "name": "-",
+      "@type": "ReportingResource",
+      "@referredType": "LogicalResource"
+    },
+    "source": {
+      "id": "-",
+      "name": "-",
+      "@type": "ReportingResource",
+      "@referredType": "LogicalResource"
+    }
+  }
+  /* final body - end */
+)

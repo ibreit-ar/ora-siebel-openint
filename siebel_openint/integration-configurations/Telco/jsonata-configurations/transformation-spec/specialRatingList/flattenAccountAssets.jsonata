@@ -1,0 +1,36 @@
+(
+  $asArray := function($value) {
+    $exists($value) ?
+      ($type($value) = "array" ? $value : [$value])
+      : []
+  };
+
+  $cleanAsset := function($asset) {
+    $sift($asset, function($value, $key) {
+      $key != "Asset Mgmt - Asset" and $key != "Link" and $key != "global"
+    })
+  };
+
+  $flattenNestedAssets := function($asset) {
+    $reduce(
+      $asArray($asset."Asset Mgmt - Asset"),
+      function($acc, $child) {
+        $append(
+          $append($acc, [$cleanAsset($child)]),
+          $flattenNestedAssets($child)
+        )
+      },
+      []
+    )
+  };
+
+  $flattenCurrentAndNestedAssets := function($asset) {
+    $append([$cleanAsset($asset)], $flattenNestedAssets($asset))
+  };
+
+  {
+    "assets": $exists(items) ?
+      items.($flattenNestedAssets($)) :
+      $flattenCurrentAndNestedAssets($)
+  }
+)

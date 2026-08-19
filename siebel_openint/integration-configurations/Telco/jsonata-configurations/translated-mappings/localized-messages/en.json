@@ -1,0 +1,5 @@
+{
+  "troubleTicket.osm.submitOrder.abstract": "OSM submit order failure.",
+  "troubleTicket.osm.cancelOrder.abstract": "OSM cancel order failure.",
+  "troubleTicket.account.brmSync.abstract": "Account not synced to BRM. "
+}

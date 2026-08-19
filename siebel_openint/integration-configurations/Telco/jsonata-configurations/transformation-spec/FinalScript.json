@@ -1,0 +1,107 @@
+(
+  $items := $exists(WorkflowInput.productOrder.productOrderItem) ? WorkflowInput.productOrder.productOrderItem : WorkflowInput.productOrderItem;
+
+  $addPrices := function($item) {
+    $merge([
+      $item,
+      {
+        "itemTotalPrice": [
+          {
+            "priceType": "recurring",
+            "description": "Item Total Recurring Price",
+            "price": {
+              "taxAmount": {
+                "value": $item.recTaxAmount,
+                "unit": $item.'Currency Code'
+              },
+              "dutyFreeAmount": {
+                "value": $item.recDutyFreeAmount,
+                "unit": $item.'Currency Code'
+              },
+              "taxIncludedAmount": {
+                "value": $item.recTaxAmount + $item.recDutyFreeAmount,
+                "unit": $item.'Currency Code'
+              },
+              "@type": "PriceOracle",
+              "@baseType": "Price"
+            }
+          },
+          {
+            "priceType": "oneTime",
+            "description": "Item Total One Time Price",
+            "price": {
+              "taxAmount": {
+                "value": $item.otTaxAmount,
+                "unit": $item.'Currency Code'
+              },
+              "dutyFreeAmount": {
+                "value": $item.otDutyFreeAmount,
+                "unit": $item.'Currency Code'
+              },
+              "taxIncludedAmount": {
+                "value": $item.otTaxAmount + $item.otDutyFreeAmount,
+                "unit": $item.'Currency Code'
+              },
+              "@type": "PriceOracle",
+              "@baseType": "Price"
+            }
+          }
+        ],
+        "recTaxAmount": undefined,
+        "recDutyFreeAmount": undefined,
+        "otTaxAmount": undefined,
+        "otDutyFreeAmount": undefined
+      }
+    ])
+  };
+
+  /* 1. Identify root items (parents) */
+  $parents := $filter($items, function($p) {
+    $not($exists($p.prodPromInstanceId)) or $trim($p.prodPromInstanceId) = ""
+  });
+
+  /* 2. For each parent, find matching children and calculate rollups */
+  $grouped := $map($parents, function($parent) {
+    (
+      $parentAssetId := $parent.assetIntegratinId;
+      $children := $filter($items, function($c) {
+        $c.prodPromInstanceId = $parentAssetId and $c.id != $parent.id
+      });
+
+      $selfTax := $parent.recTaxAmount;
+      $selfDuty := $parent.recDutyFreeAmount;
+      $selfOTTax := $parent.otTaxAmount;
+      $selfOTDuty := $parent.otDutyFreeAmount;
+
+      $childTaxSum := $count($children) > 0 ? $sum($children.recTaxAmount) : 0;
+      $childDutySum := $count($children) > 0 ? $sum($children.recDutyFreeAmount) : 0;
+      $childOTTaxSum := $count($children) > 0 ? $sum($children.otTaxAmount) : 0;
+      $childOTDutySum := $count($children) > 0 ? $sum($children.otDutyFreeAmount) : 0;
+
+      $rolledUp := $merge([
+        $parent,
+        {
+          "recTaxAmount": $selfTax + $childTaxSum,
+          "recDutyFreeAmount": $selfDuty + $childDutySum,
+          "otTaxAmount": $selfOTTax + $childOTTaxSum,
+          "otDutyFreeAmount": $selfOTDuty + $childOTDutySum,
+          "productOrderItem": $children
+        }
+      ]);
+
+      $withNestedPrices := $merge([
+        $addPrices($rolledUp),
+        {
+          "productOrderItem": $map($rolledUp.productOrderItem, $addPrices)
+        }
+      ]);
+
+      $withNestedPrices
+    )
+  });
+
+  /* 3. Rebuild root with updated productOrderItem array */
+  $merge([
+    $.WorkflowInput
+  ])
+)

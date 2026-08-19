@@ -1,0 +1,32 @@
+(
+  $SiebelMessage := WorkflowInput.SiebelMessage? WorkflowInput.SiebelMessage: SiebelMessage;
+  {
+    "Backup Order Flag": "N",
+    "Cascade Down Flag": "N",
+    "Object Id": "SWIOrderUpsert",
+    "ProcessName": "SWIOrderUpsert",
+    "SiebelMessage": {
+      "IntObjectFormat": "Siebel Hierarchical",
+      "IntObjectName": "SWIOrderIO",
+      "MessageType": "Integration Object",
+      "ListOfSWIOrderIO": {
+        "SWIOrder": [
+          {
+            "Id": $SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].Id,
+            "Order Type": "Sales Order",
+            "Status": "External System Failure",
+            "ListOfSWIOrderItem": {
+            "SWIOrderItem": $map($SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].ListOfSWIOrderItem.SWIOrderItem, function($item) {
+            {
+              "Id": $item.Id,
+              "Integration Id": $item.Id,
+              "Status": "External System Failure"
+            }
+          })
+          }
+        }
+        ]
+      }
+    }
+  }
+)

@@ -1,0 +1,81 @@
+(
+  $asArray := function($value) {
+    $exists($value) ? ($type($value) = "array" ? $value : [$value]) : []
+  };
+  $externalReferenceId := function($externalReference, $externalIdentifierType) {
+    (
+      $references := $asArray($externalReference);
+      $match := $filter($references, function($reference) {
+        $reference.externalIdentifierType = $externalIdentifierType
+      })[0];
+      $exists($match.id) ? $match.id : ""
+    )
+  };
+  $allProductOrderItems := function($items) {
+    $reduce($asArray($items), function($accumulator, $item) {
+      $append(
+        $accumulator,
+        $append([$item], $allProductOrderItems($item.productOrderItem))
+      )
+    }, [])
+  };
+  $lineItemId := function($item) {
+    (
+      $itemLineItemId := $externalReferenceId($item.externalReference, "externalOrderItemID");
+      $productLineItemId := $externalReferenceId($item.product.externalReference, "externalOrderItemID");
+      $itemLineItemId != "" ? $itemLineItemId : ($productLineItemId != "" ? $productLineItemId : $item.id)
+    )
+  };
+  $commandPayload := function($input) {
+    (
+      $payload := $exists($input.rejectedPayload) ? $input.rejectedPayload : $input;
+      $type($payload) = "string" ? $eval($payload) : $payload
+    )
+  };
+  $productOrderFromCommand := function($payload) {
+    $exists($payload.productOrderItem) ? $payload :
+      ($exists($payload.productOrder.productOrderItem) ? $payload.productOrder : $payload.productOrder)
+  };
+  $payload := $commandPayload(WorkflowInput);
+  $productOrder := $productOrderFromCommand($payload);
+  $items := $allProductOrderItems($productOrder.productOrderItem);
+  $orderId := (
+    $fromHeader := $externalReferenceId($productOrder.externalReference, "externalOrderId");
+    $fromProductOrderRef := $externalReferenceId($payload.productOrder.externalReference, "externalOrderId");
+    $fromHeader != "" ? $fromHeader : ($fromProductOrderRef != "" ? $fromProductOrderRef : $productOrder.externalId)
+  );
+  {
+    "Backup Order Flag": "N",
+    "Cascade Down Flag": "N",
+    "Object Id": "SWIOrderUpsert",
+    "ProcessName": "SWIOrderUpsert",
+    "SiebelMessage": {
+      "IntObjectFormat": "Siebel Hierarchical",
+      "IntObjectName": "SWIOrderIO",
+      "MessageType": "Integration Object",
+      "ListOfSWIOrderIO": {
+        "SWIOrder": [
+          {
+            "Id": $orderId,
+            "Order Type": "Sales Order",
+            "Status": "Failed",
+            "Delivery Status": "Rejected",
+            "ListOfSWIOrderItem": {
+              "SWIOrderItem": $map($items, function($item) {
+                (
+                  $id := $lineItemId($item);
+                  {
+                    "Id": $id,
+                    "Integration Id": $id,
+                    "Status": "Failed",
+                    "Delivery Status": "Rejected"
+                  }
+                )
+              })
+            }
+          }
+        ]
+      }
+    }
+  }
+)

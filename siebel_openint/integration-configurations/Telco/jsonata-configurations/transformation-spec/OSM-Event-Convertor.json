@@ -1,0 +1,18 @@
+{
+"@type": "ProductOrderOSM_Create",
+"externalId": WorkflowInput.SiebelMessageIn.,"ListOfOrder Interface".Orders[0].Id,
+"description": WorkflowInput.SiebelMessageIn."ListOfOrder Interface".Orders[0].Description,
+"requestedCompletionDate": WorkflowInput.SiebelMessageIn."ListOfOrder Interface".Orders[0].'Requested Date',
+"priority":  WorkflowInput.SiebelMessageIn."ListOfOrder Interface".Orders[0].'Order Priority',
+"status": WorkflowInput.SiebelMessageIn."ListOfOrder Interface".Orders[0].'Status',
+"currency": WorkflowInput.SiebelMessageIn."ListOfOrder Interface".Orders[0].'Currency Code',
+"id": WorkflowInput.SiebelMessageIn."ListOfOrder Interface".Orders[0].'Order Number',
+"orderDate": WorkflowInput.SiebelMessageIn."ListOfOrder Interface".Orders[0].'Order Date',
+"requestedStartDate": WorkflowInput.SiebelMessageIn."ListOfOrder Interface".Orders[0].'Requested Date',
+"category": WorkflowInput.SiebelMessageIn."ListOfOrder Interface".Orders[0].'Order Type',
+        "note": WorkflowInput.SiebelMessageIn."ListOfOrder Interface".Orders[0].'Comments',
+'billingAccount': {
+'id': WorkflowInput.SiebelMessageIn."ListOfOrder Interface".Orders[0].'Bill To Account Id',
+'name': WorkflowInput.SiebelMessageIn."ListOfOrder Interface".Orders[0].'Bill To Account'
+},
+}

@@ -1,0 +1,5 @@
+(
+  $exists($."Trouble_Ticket") ? $.Trouble_Ticket :
+    $exists($."BRM_sync_fail") ? $.BRM_sync_fail :
+    $exists($."SRList_sync_fail") ? $.SRList_sync_fail;
+)

@@ -1,0 +1,205 @@
+(
+	$items := $.get_product_order.SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].ListOfSWIOrderItem.SWIOrderItem;
+
+	$safeNumber := function($val) {
+		$trim($string($val)) != "" ? $number($val) : 0
+	};
+
+	$tmfAction := function($actionCode) {
+		(
+			$action := $lowercase($trim($string($actionCode)));
+			$action = "" or $action = "-" or $action = "existing" ? "noChange" :
+			$action = "new" or $action = "add" ? "add" :
+			$action = "modify" or $action = "modified" ? "modify" :
+			$action = "delete" or $action = "deleted" ? "terminate" :
+			$action = "suspend" or $action = "suspended" ? "suspend" :
+			$action = "resume" or $action = "resumed" ? "resume" :
+			$action = "terminate" or $action = "terminated" ? "terminate" :
+			"noChange"
+		)
+	};
+
+	$buildTree := function($nodes, $parentId, $headerPriceListId) {
+		$map(
+			$filter($nodes, function($n) {
+				$n.'Parent Order Item Id' = $parentId
+			}),
+			function($node) {(
+				$children := $buildTree($nodes, $node.Id);
+
+				$purchaseChild := $filter($nodes, function($c) {
+					$c.'Parent Order Item Id' = $node.Id and $contains($c.Name, "-PURCHASE")
+				})[0];
+
+				$purchasePriceToAdd := $purchaseChild ? $safeNumber($purchaseChild.'Net Price') : 0;
+				$netPrice := $safeNumber($node.'Net Price');
+				$listPrice := $safeNumber($node.'List Price');
+
+				$hasDiscountPercent := $exists($node.'Discount Percent') and $trim($string($node.'Discount Percent')) != '';
+				$hasDiscountAmount := $exists($node.'Discount Amount') and $trim($string($node.'Discount Amount')) != '';
+				$hasUnitPrice := $exists($node.'Unit Price') and $trim($string($node.'Unit Price')) != '';
+				$hasPriceListId := $exists($node.'Price List Id') and $trim($string($node.'Price List Id')) != '';
+
+				$resolvedPriceType :=$hasDiscountPercent ? 'discountPercentageOverride' : $hasDiscountAmount ? 'amountOverride' : $hasUnitPrice ? 'discountOverride' : null;
+
+				$priceListId := $hasPriceListId ? $node.'Price List Id': $headerPriceListId;
+
+				$base := {
+					'@type': 'ProductOrderItemOSMDBE',
+					'id': $node.Id,
+					'action': $tmfAction($node.'Action Code'),
+					'quantity': $node.Quantity,
+					'productOffering': {
+						'id': $node.'External Product Id',
+						'name': $node.'Name'
+					},
+					'priceList': {
+						'id': $priceListId,
+						'name': ''
+					},
+					'itemPrice': [
+						$merge(
+							[
+								{
+									'priceType': $node.'Price Type',
+									'recurringChargePeriod': $node.'Unit of Measure',
+									'price': {
+										'dutyFreeAmount': {
+											'value': $listPrice,
+											'unit': $node.'Currency Code'
+										},
+										'taxIncludedAmount': {
+											'value': $listPrice,
+											'unit': $node.'Currency Code'
+										}
+									}
+								},
+								$resolvedPriceType ? {
+									'priceAlteration': [
+										{
+											'priceType': $resolvedPriceType,
+											'price': {
+												'dutyFreeAmount': {
+													'unit': $node.'Currency Code',
+													'value': $netPrice
+												},
+												'taxIncludedAmount': {
+													'unit': $node.'Currency Code',
+													'value': $netPrice
+												}
+											}
+										}
+									]
+								}: {}
+							]
+						)
+					],
+					'itemTotalPrice': (
+						$promoType := $node.'Promotion Role';
+						$mrc := $safeNumber($node.'Promotion MRC Total');
+						$nrc := $safeNumber($node.'Promotion NRC Total');
+						$promoType = 'Bundled Promotions' ? [
+							{
+								'priceType': 'recurring',
+								'price': {
+									'dutyFreeAmount': {
+										'value': $mrc,
+										'unit': $node.'Currency Code'
+									},
+									'taxIncludedAmount': {
+										'value': $mrc,
+										'unit': $node.'Currency Code'
+									}
+								}
+							},
+							{
+								'priceType': 'oneTime',
+								'price': {
+									'dutyFreeAmount': {
+										'value': $nrc,
+										'unit': $node.'Currency Code'
+									},
+									'taxIncludedAmount': {
+										'value': $nrc,
+										'unit': $node.'Currency Code'
+									}
+								}
+							}
+						]: []
+					),
+					'product': {
+						'@type': 'ProductRefOrValueOSMDBE',
+						'id': $node.'Asset Integration Id',
+						'serviceId': $node.'Service Id',
+						'name': 'emulator',
+						'productSpecification': {
+							'id': $node.'External Class Id',
+							'name': $node.'Class Name'
+						},
+						'productCharacteristic': (
+							$xa := $node.ListOfSWIOrderItemXA.SWIOrderItemXA;
+							$map(
+								$type($xa) = "array" ? $xa :
+								$type($xa) = "object" ? [$xa] : [],
+								function($c) {
+									{
+										'name': $c.Name, 'value': $c.Value,
+										'valueType': $c.'Property Type Code'
+									}
+								}
+							)
+						)
+					}
+				};
+
+				$filteredChildren := $filter($children, function($v) {
+					$not($contains($v.productOffering.name, "-PURCHASE"))
+				});
+
+				$count($filteredChildren) > 0 ? $merge([$base, { 'productOrderItem': $filteredChildren }]) : $base
+			)}
+		)
+	};
+
+	{
+		"@type": "ProductOrderOSM_Create",
+		'externalId': $.get_product_order.SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].Id,
+		'description': $.get_product_order.SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].Description,
+		'priority': $.get_product_order.SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Order Priority',
+		'orderTotalPrice': [
+			{
+				'priceType': 'recurring',
+				'price': {
+					'dutyFreeAmount': {
+						'value': $safeNumber($.get_product_order.SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'MRC Total'),
+						'unit': $.get_product_order.SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Currency Code'
+					},
+					'taxIncludedAmount': {
+						'value': $safeNumber($.get_product_order.SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Tax Amount MRC') + $safeNumber($.get_product_order.SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'MRC Total'),
+						'unit': $.get_product_order.SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Currency Code'
+					}
+				}
+			},
+			{
+				'priceType': 'oneTime',
+				'price': {
+					'dutyFreeAmount': {
+						'value': $safeNumber($.get_product_order.SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'NRC Total'),
+						'unit': $.get_product_order.SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Currency Code'
+					},
+					'taxIncludedAmount': {
+						'value': $safeNumber($.get_product_order.SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Tax Amount NRC') + $safeNumber($.get_product_order.SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'NRC Total'),
+						'unit': $.get_product_order.SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Currency Code'
+					}
+				}
+			}
+		],
+		'billingAccount': {
+			'id': $.get_product_order.SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Billing Account Id',
+			'name': $.get_product_order.SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Billing Account'
+		},
+		'productOrderItem': [
+			$buildTree($items, "", $.get_product_order.SiebelMessage.ListOfSWIOrderIO.SWIOrder[0].'Price List Id')
+		]
+	}
+)

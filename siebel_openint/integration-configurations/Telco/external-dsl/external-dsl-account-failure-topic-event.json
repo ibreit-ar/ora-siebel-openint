@@ -1,0 +1,98 @@
+{
+  "input": {
+    "type": "object"
+  },
+  "global": [
+    "tt_id"
+  ],
+  "output": {
+    "type": "object"
+  },
+  "steps": {
+    "BRM_sync_fail": {
+      "type": "RESTOutbound",
+      "restSpec": "siebel-tmf-dbe",
+      "endPoint": "SWI Trouble Ticket Service/Insert",
+      "method": "POST",
+      "inputHeaders": {
+        "Content-Type": "application/json"
+      },
+      "queryParams": {
+        "matchrequestformat": "y"
+      },
+      "inputSpecification": {
+        "dataCollection": [
+          {
+            "source": "WorkflowInput"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/party-account-trouble-ticket-data-collection.jsonata"
+          }
+        ]
+      },
+      "retryConfig": {
+        "retryDelayMilliseconds": 50,
+        "retryBackoffMultiplier": 2.0,
+        "retryTotalTimeoutMilliseconds": 900,
+        "retryExcludeStatusCodes": [404, 200]
+      },
+      "output": {
+        "global.tt_id": "${output.SiebelMessage.ListOfSWITroubleTicketIO.'Trouble Ticket'[0].Id}"
+      }
+    }
+  },
+  "response": {
+    "success": {
+      "payload": {
+        "dataCollection": [
+          {
+            "source": "BRM_sync_fail"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/Match_Request_Trouble_Ticket.jsonata"
+          }
+        ]
+      },
+      "statusCode": 200
+    },
+    "error": {
+      "payload": {
+        "dataCollection": [
+          {
+            "source": "BRM_sync_fail"
+          }
+        ],
+        "transformation": [
+          {
+            "transformationSpec": "partyAccount/Match_Request_Trouble_Ticket.jsonata"
+          }
+        ]
+      },
+      "statusCode": 200
+    }
+  },
+  "transitions": {
+    "$start": {
+      "transitions": [
+        {
+          "target": "BRM_sync_fail"
+        }
+      ]
+    },
+    "BRM_sync_fail": {
+      "transitions": [
+        {
+          "condition": "${global.tt_id != ''}",
+          "target": "$end"
+        },
+        {
+          "target": "$errorEnd"
+        }
+      ]
+    }
+  }
+}

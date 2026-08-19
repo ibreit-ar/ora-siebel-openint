@@ -1,0 +1,87 @@
+(
+  $statusMap := {
+    "pending": "Open",
+    "inProgress": "Open",
+    "partial": "Open",
+    "amending": "Open",
+    "failed": "Failed",
+    "pendingCancellation": "Pending Cancel",
+    "cancelled": "Cancelled",
+    "completed": "Complete"
+  };
+
+  $fulfillmentStatusMap := {
+    "pending": "Pending",
+    "inProgress": "In Progress",
+    "partial": "Partially Fulfilled",
+    "amending": "Amending",
+    "failed": "Failed",
+    "pendingCancellation": "Pending Cancel",
+    "cancelled": "Cancelled",
+    "completed": "Complete"
+  };
+
+  $statusParse := function($orderState) {
+    $split($orderState, ".")[0]
+  };
+
+  $externalReferenceId := function($externalReference, $externalIdentifierType) {
+    (
+      $references := $type($externalReference) = "array" ? $externalReference :
+        $type($externalReference) = "object" ? [$externalReference] : [];
+      $match := $filter($references, function($reference) {
+        $reference.externalIdentifierType = $externalIdentifierType
+      })[0];
+      $exists($match.id) ? $match.id : ""
+    )
+  };
+
+  $asArray := function($value) {
+    $exists($value) ? ($type($value) = "array" ? $value : [$value]) : []
+  };
+
+  $allProductOrderItems := function($items) {
+    $reduce($asArray($items), function($accumulator, $item) {
+      $append(
+        $accumulator,
+        $append([$item], $allProductOrderItems($item.productOrderItem))
+      )
+    }, [])
+  };
+
+  $orderReferenceId := function($productOrder) {
+    (
+      $headerOrderId := $externalReferenceId($productOrder.externalReference, "externalOrderId");
+      $items := $allProductOrderItems($productOrder.productOrderItem);
+      $itemWithOrderId := $filter($items, function($item) {
+        $externalReferenceId($item.externalReference, "externalOrderId") != "" or
+        $externalReferenceId($item.product.externalReference, "externalOrderId") != ""
+      })[0];
+      $itemOrderId := $externalReferenceId($itemWithOrderId.externalReference, "externalOrderId");
+      $productOrderId := $externalReferenceId($itemWithOrderId.product.externalReference, "externalOrderId");
+      $headerOrderId != "" ? $headerOrderId : ($itemOrderId != "" ? $itemOrderId : $productOrderId)
+    )
+  };
+
+  {
+    "Backup Order Flag": "N",
+    "Cascade Down Flag": "N",
+    "Object Id": "SWIOrderUpsert",
+    "ProcessName": "SWIOrderUpsert",
+    "SiebelMessage": {
+      "IntObjectFormat": "Siebel Hierarchical",
+      "IntObjectName": "SWIOrderIO",
+      "MessageType": "Integration Object",
+      "ListOfSWIOrderIO": {
+        "SWIOrder": [
+          {
+            "Status": $lookup($statusMap, $statusParse(event.productOrder.state)),
+            "Delivery Status": $lookup($fulfillmentStatusMap, $statusParse(event.productOrder.state)),
+            "Id": $orderReferenceId(event.productOrder),
+            "Order Type": "Sales Order"
+          }
+        ]
+      }
+    }
+  }
+)

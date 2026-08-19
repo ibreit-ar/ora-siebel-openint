@@ -1,0 +1,59 @@
+(
+  /* TODO: Review OSM cancel lifecycle to Siebel status mapping with OSM/Siebel owners before production signoff. */
+  $statusMap := {
+    "acknowledged": "Pending Cancel",
+    "queued": "Pending Cancel",
+    "inProgress": "Pending Cancel",
+    "done": "Cancelled",
+    "terminated": "Cancelled",
+    "terminatedWithError": "Failed",
+    "skipped": "Open"
+  };
+
+  $fulfillmentStatusMap := {
+    "acknowledged": "Pending Cancel",
+    "queued": "Pending Cancel",
+    "inProgress": "Pending Cancel",
+    "done": "Cancelled",
+    "terminated": "Cancelled",
+    "terminatedWithError": "Failed",
+    "skipped": "Pending"
+  };
+
+  $statusParse := function($orderState) {
+    $split($orderState, ".")[0]
+  };
+
+  $externalReferenceId := function($externalReference, $externalIdentifierType) {
+    (
+      $references := $type($externalReference) = "array" ? $externalReference :
+        $type($externalReference) = "object" ? [$externalReference] : [];
+      $match := $filter($references, function($reference) {
+        $reference.externalIdentifierType = $externalIdentifierType
+      })[0];
+      $exists($match.id) ? $match.id : ""
+    )
+  };
+
+  {
+    "Backup Order Flag": "N",
+    "Cascade Down Flag": "N",
+    "Object Id": "SWIOrderUpsert",
+    "ProcessName": "SWIOrderUpsert",
+    "SiebelMessage": {
+      "IntObjectFormat": "Siebel Hierarchical",
+      "IntObjectName": "SWIOrderIO",
+      "MessageType": "Integration Object",
+      "ListOfSWIOrderIO": {
+        "SWIOrder": [
+          {
+            "Status": $lookup($statusMap, $statusParse(event.cancelProductOrder.state)),
+            "Delivery Status": $lookup($fulfillmentStatusMap, $statusParse(event.cancelProductOrder.state)),
+            "Id": $externalReferenceId(event.cancelProductOrder.productOrder.externalReference, "externalOrderId"),
+            "Order Type": "Sales Order"
+          }
+        ]
+      }
+    }
+  }
+)
