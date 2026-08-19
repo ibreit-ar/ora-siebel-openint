@@ -42,6 +42,53 @@
         }
       }
     },
+      "features": {
+        "security": {
+          "defaults": {
+            "authenticate": false,
+            "authorize": false
+          },
+          "paths": [
+            {
+              "path": "/openintegration/v1.0/[{+path}/]{last:(?!describe$)[^/]+}[/]",
+              "methods": [
+                "get",
+                "post",
+                "put",
+                "delete"
+              ],
+              "abac": {
+                "scopes": [
+                  "read"
+                ]
+              }
+            }
+          ]
+        }
+      },
+    "restrictive-cors": {
+      "allow-origins": [],
+      "allow-methods": []
+    },
+    "cache": {
+      "enabled": false
+    },
+    "threshold": {
+      "session-usage-percent": 75
+    },
+    "integrations": {
+      "jsonata": {
+        "pool": {
+          "max-size": 8,
+          "acquire-timeout-millis": 250,
+          "idle-ttl-millis": 300000,
+          "cleanup-interval-millis": 30000
+        }
+      }
+    },
+    "tracing": {
+      "enabled": false
+    },
     "cache": {
       "enabled": "true",
       "wka": [
