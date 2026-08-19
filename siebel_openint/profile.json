@@ -105,6 +105,7 @@
     "Applications": [
       {
         "Name": "ecommunications_sso",
+        "Language": "esn",
         "ObjectManager": "eCommunicationsObjMgrSSO_esn",
         "MaxTasks": 20,
         "AuthenticationProperties": {
@@ -118,6 +119,7 @@
       },
       {
         "Name": "eai_sso",
+        "Language": "esn",
         "ObjectManager": "EAIObjMgrSSO_esn",
         "MaxTasks": 20,
         "AuthenticationProperties": {
