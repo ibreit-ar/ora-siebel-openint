@@ -12,10 +12,8 @@
   "eps": {
     "SecureAIToKafkaCommunication": "false",
     "KafkaServers": "kafka-oi.kafka-oi.svc.cluster.local:9092",
-    "KafkaAuthenticationEnabled": "true",
-    "KafkaAuthenticationMechanism": "SCRAM-SHA-512",
-    "KafkaAuthenticationUser": "siebel-user",
-    "KafkaAuthenticationPassword": "Siebel2026!Seguro",
+    "SecureAIEgressServer": "false",
+    "AIEgressPort": "9091",
     "aieventconfig": {
       "ConfigParam": {
         "NumberOfProducers": "1",
