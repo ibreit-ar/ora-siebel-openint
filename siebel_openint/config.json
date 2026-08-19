@@ -10,6 +10,8 @@
     "metrics-path": "/tmp"
   },
   "eps": {
+    "SecureAIEgressServer": "false",
+    "AIEgressPort": "9091",    
     "SecureAIToKafkaCommunication": "false",
     "KafkaServers": "kafka-oi.kafka-oi.svc.cluster.local:9092",
     "aieventconfig": {
