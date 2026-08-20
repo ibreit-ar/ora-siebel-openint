@@ -1,13 +1,12 @@
 {
   "apigen": {
-    "language": "en",
     "externalREST": {
       "siebel-tmf-dbe": {
         "baseURL": "https://10.1.4.249/siebel/v1.0/service",
         "authentication": {
           "basic": {
             "username": "sadmin",
-            "password": "ldap"
+            "password": "Sadmin22__Aa"
           }
         }
       },
@@ -16,7 +15,7 @@
         "authentication": {
           "basic": {
             "username": "sadmin",
-            "password": "ldap"
+            "password": "Sadmin22__Aa"
           }
         }
       },
