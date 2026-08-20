@@ -13,8 +13,11 @@
     "SecureAIEgressServer": "false",
     "AIEgressPort": "9091",    
     "SecureAIToKafkaCommunication": "false",
-    "DLQMessagesMaxLimit": "500",    
     "KafkaServers": "kafka-oi.kafka-oi.svc.cluster.local:9092",
+    "KafkaAuthenticationEnabled": "true",
+    "KafkaAuthenticationMechanism": "SCRAM-SHA-512",
+    "KafkaAuthenticationUser": "siebel-user",
+    "KafkaAuthenticationPassword": "Siebel2026!Seguro",    
     "aieventconfig": {
       "ConfigParam": {
         "NumberOfProducers": "1",
@@ -25,38 +28,22 @@
           {
             "EventStore": "productOrderEvent",
             "NumberOfConsumers": "1",
-            "KafkaConsumerGroupId": "consumer",
-            "RetryCount": "3",
-            "RetryBackoff": "2",
-            "DLQEnabled": "true",
-            "DLQTopic": "productOrderEventDLQ"
+            "KafkaConsumerGroupId": "consumer"
           },
           {
             "EventStore": "productOrder-command-response",
             "NumberOfConsumers": "1",
-            "KafkaConsumerGroupId": "consumer",
-            "RetryCount": "3",
-            "RetryBackoff": "2",
-            "DLQEnabled": "true",
-            "DLQTopic": "productOrder-command-responseDLQ"
+            "KafkaConsumerGroupId": "consumer"
           },
           {
             "EventStore": "partyAccountErrorEvent",
             "NumberOfConsumers": "1",
-            "KafkaConsumerGroupId": "consumer",
-            "RetryCount": "3",
-            "RetryBackoff": "2",
-            "DLQEnabled": "true",
-            "DLQTopic": "partyAccountErrorEventDLQ"
+            "KafkaConsumerGroupId": "consumer"
           },
           {
             "EventStore": "productErrorEvent",
             "NumberOfConsumers": "1",
-            "KafkaConsumerGroupId": "consumer",
-            "RetryCount": "3",
-            "RetryBackoff": "2",
-            "DLQEnabled": "true",
-            "DLQTopic": "productErrorEventDLQ"
+            "KafkaConsumerGroupId": "consumer"
           }
         ]
       }
