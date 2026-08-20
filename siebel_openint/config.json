@@ -67,7 +67,6 @@
         "Quote/Quote",
         "Service Request/Service Request",
         "Service Request/Service Request/id/Action",
-        "List Of Values/List Of Values",
         "Order Entry/Order Entry - Orders",
         "Order Entry/Order Entry - Orders/id",
         "Order Entry/Order Entry - Orders/id/Order Entry - Line Items",
@@ -78,10 +77,7 @@
         "Catalog Admin/Product Catalog/id/Catalog Category Admin",
         "Catalog Admin/Product Catalog/id/Catalog Category Admin/id/Internal Product",
         "Price List/Price List",
-        "Price List/Price List/id/Internal Product",
-        "Responsibility/Responsibility",
-        "Responsibility/Responsibility/id/Feature Access",
-        "Responsibility/Responsibility/id/User"
+        "Price List/Price List/id/Internal Product"
       ],
       "openintegration/v1.0/ui": [
         "Order Entry - Line Items View (Sales)/Order Entry - Order Form Applet Dashboard (Sales)"
@@ -95,10 +91,7 @@
         "SISOMSuspendWebService-Order",
         "SISOMResumeWebService-Order",
         "SISOMDisconnectWebService-Order",
-        "SIS OM Move Process",
-        "SWIRevisionOrderWorkflow",
-        "ISS Promotion WS - In Memory Upgrade Process-Order",
-        "ISS Edit Promotion WS - Delete Item Process"
+        "SIS OM Move Process"
       ],
       "openintegration/v1.0/service": [
         "SWI Product/QueryByExample",
