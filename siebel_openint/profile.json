@@ -42,36 +42,41 @@
         }
       }
     },
-      "features": {
-        "security": {
-          "defaults": {
-            "authenticate": false,
-            "authorize": false
-          },
-          "paths": [
-            {
-              "path": "/openintegration/v1.0/[{+path}/]{last:(?!describe$)[^/]+}[/]",
-              "methods": [
-                "get",
-                "post",
-                "put",
-                "delete"
-              ],
-              "abac": {
-                "scopes": [
-                  "read"
-                ]
-              }
+    "features": {
+      "security": {
+        "defaults": {
+          "authenticate": false,
+          "authorize": false
+        },
+        "paths": [
+          {
+            "path": "/openintegration/v1.0/[{+path}/]{last:(?!describe$)[^/]+}[/]",
+            "methods": [
+              "get",
+              "post",
+              "put",
+              "delete"
+            ],
+            "abac": {
+              "scopes": [
+                "read"
+              ]
             }
-          ]
-        }
-      },
+          }
+        ]
+      }
+    },
     "restrictive-cors": {
       "allow-origins": [],
       "allow-methods": []
     },
     "cache": {
-      "enabled": false
+      "enabled": "true",
+      "wka": [
+        "coherence-nodeport-siebelcache.oidev2.svc.cluster.local"
+      ],
+      "tlsEnabled": "true",
+      "cluster-name": "siebelcache"
     },
     "threshold": {
       "session-usage-percent": 75
@@ -88,14 +93,6 @@
     },
     "tracing": {
       "enabled": false
-    },
-    "cache": {
-      "enabled": "true",
-      "wka": [
-        "coherence-nodeport-siebelcache.oidev.svc.cluster.local"
-      ],
-      "tlsEnabled": "true",
-      "cluster-name": "siebelcache"
     }
   },
   "Profile": {
