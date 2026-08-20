@@ -1,6 +1,5 @@
 {
   "apigen": {
-    "language": "en",
     "externalREST": {
       "siebel-tmf-dbe": {
         "baseURL": "https://10.1.4.249/siebel/v1.0/service",
