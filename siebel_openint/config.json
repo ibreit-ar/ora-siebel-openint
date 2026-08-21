@@ -95,9 +95,7 @@
         "SISOMSuspendWebService-Order",
         "SISOMResumeWebService-Order",
         "SISOMDisconnectWebService-Order",
-        "SIS OM Move Process",
-        "ISS Promotion WS - In Memory Upgrade Process-Order",
-        "ISS Edit Promotion WS - Delete Item Process"
+        "SIS OM Move Process"
       ],
       "openintegration/v1.0/service": [
         "SWI Product/QueryByExample",
