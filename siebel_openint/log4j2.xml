@@ -1,0 +1,22 @@
+<Configuration status="WARN" name="Logging" monitorInterval="300">
+  <Appenders>
+    <Console name="Console" target="SYSTEM_OUT">
+      <PatternLayout>
+        <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} | %-5level | %X{operation} | %X{channel}:%X{correlationId} | %X{sourceSystem}:%X{userAgent} | %t | %logger{36} - %msg%n</pattern>
+      </PatternLayout>
+    </Console>
+    <RollingFile name="FileLogger" fileName="logs/siebel-openint.log" filePattern="logs/siebel-openint-%d{yyyy-MM-dd}-%i.log">
+      <PatternLayout>
+        <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} | %-5level | %X{operation} | %X{channel}:%X{correlationId} | %X{sourceSystem}:%X{userAgent} | %t | %logger{36} - %msg%n</pattern>
+      </PatternLayout>
+      <Policies><SizeBasedTriggeringPolicy size="100 MB"/></Policies>
+      <DefaultRolloverStrategy fileIndex="nomax" />
+    </RollingFile>
+  </Appenders>
+  <Loggers>
+    <Root level="DEBUG" additivity="false">
+      <AppenderRef ref="FileLogger"/>
+      <AppenderRef ref="Console" level="DEBUG"/>
+    </Root>
+  </Loggers>
+</Configuration>
