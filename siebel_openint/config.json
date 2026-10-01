@@ -98,8 +98,7 @@
     "ISS Promotion WS - In Memory Upgrade Process-Order",
     "ISS Edit Promotion WS - Delete Item Process",
     "Web Channel Ordering Workflow",
-    "SIS OM Move WebService",
-    "IZZI Validation Accnt WF API"
+    "SIS OM Move WebService"
 
   ],
   "openintegration/v1.0/service": [
