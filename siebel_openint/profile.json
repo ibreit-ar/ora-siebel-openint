@@ -42,41 +42,19 @@
         }
       }
     },
-    "features": {
-      "security": {
-        "defaults": {
-          "authenticate": false,
-          "authorize": false
-        },
-        "paths": [
-          {
-            "path": "/openintegration/v1.0/[{+path}/]{last:(?!describe$)[^/]+}[/]",
-            "methods": [
-              "get",
-              "post",
-              "put",
-              "delete"
-            ],
-            "abac": {
-              "scopes": [
-                "read"
-              ]
-            }
-          }
-        ]
-      }
+    "security": {
+      "enabled": false
     },
     "restrictive-cors": {
-      "allow-origins": [],
-      "allow-methods": []
-    },
-    "cache": {
-      "enabled": "true",
-      "wka": [
-        "coherence-nodeport-siebelcache.oidev2.svc.cluster.local"
+      "allow-origins": [
+        "*"
       ],
-      "tlsEnabled": "true",
-      "cluster-name": "siebelcache"
+      "allow-methods": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE"
+      ]
     },
     "threshold": {
       "session-usage-percent": 75
@@ -93,6 +71,14 @@
     },
     "tracing": {
       "enabled": false
+    },
+    "cache": {
+      "enabled": true,
+      "wka": [
+        "coherence-nodeport-siebelcache.oideploydev.svc.cluster.local"
+      ],
+      "tlsEnabled": true,
+      "cluster-name": "siebelcache"
     }
   },
   "Profile": {
