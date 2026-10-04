@@ -82,7 +82,7 @@
         },
         {
           "oidc": {
-            "identity-uri": "idcs-3d129057fdf94349a1161fbd8e0d03bc.identity.oraclecloud.com",
+            "identity-uri": "https://idcs-3d129057fdf94349a1161fbd8e0d03bc.identity.oraclecloud.com",
             "client-id": "35dcb3008fff4eb093a28b6524e0e147",
             "client-secret": "idcscs-c4c5c110-d472-4e63-93dc-b09b1effc7bc",
             "audience": "https://comms-b2c-lab/",
