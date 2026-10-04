@@ -141,7 +141,7 @@
         "MaxTasks": 20,
         "AuthenticationProperties": {
           "UserSpec": "X-Siebel-User",
-          "TrustToken": "Sadmin22__Aa",
+          "TrustToken": "Guest22__Aa",
           "SingleSignOn": true,
           "AnonUserName": "SADMIN",
           "SessionTimeout": 300,
@@ -155,7 +155,7 @@
         "MaxTasks": 20,
         "AuthenticationProperties": {
           "UserSpec": "X-Siebel-User",
-          "TrustToken": "Sadmin22__Aa",
+          "TrustToken": "Guest22__Aa",
           "SingleSignOn": true,
           "AnonUserName": "SADMIN",
           "SessionTimeout": 300,
@@ -168,7 +168,7 @@
       "RESTAuthenticationProperties": {
         "AnonUserName": "SADMIN",
         "UserSpec": "X-Siebel-User",
-        "TrustToken": "Sadmin22__Aa"
+        "TrustToken": "Guest22__Aa"
       },
       "ObjectManager": "EAIObjMgrSSO_esn"
     }
