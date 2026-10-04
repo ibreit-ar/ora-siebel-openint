@@ -13,9 +13,12 @@
       "siebel-data-tmf-dbe": {
         "baseURL": "https://10.1.4.249/siebel/v1.0/data",
         "authentication": {
-          "basic": {
-            "username": "sadmin",
-            "password": "Sadmin22__Aa"
+          "oidc-client-credentials": {
+            "scope": "https://comms-b2c-lab/data",
+            "client-id": "35dcb3008fff4eb093a28b6524e0e147",
+            "client-secret": "idcscs-c4c5c110-d472-4e63-93dc-b09b1effc7bc",
+            "identity-uri": "https://idcs-3d129057fdf94349a1161fbd8e0d03bc.identity.oraclecloud.com/oauth2/v1/token",
+            "oidc-flow": "user-assertion"
           }
         }
       }
