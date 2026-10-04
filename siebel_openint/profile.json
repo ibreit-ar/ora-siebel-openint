@@ -40,6 +40,32 @@
             }
           }
         }
+      },
+      "features": {
+        "security": {
+          "defaults": {
+            "authenticate": false,
+            "authorize": false
+          },
+          "paths": [
+            {
+              "path": "/openintegration/v1.0/data/[{+path}/]{last:(?!describe$)[^/]+}[/]",
+              "methods": [
+                "get",
+                "post",
+                "put",
+                "delete"
+              ],
+              "authenticate": true,
+              "authorize": true,
+              "abac": {
+                "scopes": [
+                  "https://comms-b2c-lab/data"
+                ]
+              }
+            }
+          ]
+        }
       }
     },
     "security": {
