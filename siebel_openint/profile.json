@@ -60,7 +60,7 @@
               "authorize": true,
               "abac": {
                 "scopes": [
-                  "https://comms-b2c-lab/data"
+                  "data"
                 ]
               }
             }
